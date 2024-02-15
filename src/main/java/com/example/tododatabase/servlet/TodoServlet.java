@@ -7,16 +7,20 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-@WebServlet("/todo")
+@WebServlet(name = "TodoServlet", urlPatterns = {"/todo/*"})
 public class TodoServlet extends HttpServlet {
     private TodoDAO todoDAO;
+    private final static Logger LOGGER = Logger.getLogger(TodoServlet.class.getName());
 
     @Override
     public void init() {
@@ -25,41 +29,46 @@ public class TodoServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String action = request.getPathInfo();
         try {
-            String action = request.getServletPath();
+            if (action == null) {
+                action = "/list"; // default action
+            }
             switch (action) {
-                case "/todo/delete":
+                case "/delete":
                     deleteTodo(request, response);
                     break;
-                case "/todo/edit":
+                case "/edit":
                     showEditForm(request, response);
                     break;
-                case "/todo/list":
+                case "/list":
                 default:
                     listTodos(request, response);
                     break;
             }
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error in GET request", e);
             handleError(response, e);
         }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String action = request.getPathInfo();
         try {
-            String action = request.getServletPath();
             switch (action) {
-                case "/todo/new":
+                case "/new":
                     insertTodo(request, response);
                     break;
-                case "/todo/update":
+                case "/update":
                     updateTodo(request, response);
                     break;
                 default:
-                    listTodos(request, response);
+                    response.sendRedirect(request.getContextPath() + "/todo/list");
                     break;
             }
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error in POST request", e);
             handleError(response, e);
         }
     }
@@ -71,6 +80,7 @@ public class TodoServlet extends HttpServlet {
             request.setAttribute("listTodo", listTodo);
             request.getRequestDispatcher("/WEB-INF/views/todo-list.jsp").forward(request, response);
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error listing todos", e);
             handleError(response, e);
         }
     }
@@ -83,6 +93,7 @@ public class TodoServlet extends HttpServlet {
             request.setAttribute("todo", existingTodo);
             request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error showing edit form", e);
             handleError(response, e);
         }
     }
@@ -97,7 +108,7 @@ public class TodoServlet extends HttpServlet {
 
         Todo newTodo = new Todo(title, description, targetDate, isDone);
         todoDAO.insertTodo(newTodo);
-        response.sendRedirect("list");
+        response.sendRedirect(request.getContextPath() + "/todo/list");
     }
 
     private void updateTodo(HttpServletRequest request, HttpServletResponse response)
@@ -111,16 +122,15 @@ public class TodoServlet extends HttpServlet {
 
         Todo todo = new Todo(id, title, description, targetDate, isDone);
         todoDAO.updateTodo(todo);
-        response.sendRedirect("list");
+        response.sendRedirect(request.getContextPath() + "/todo/list");
     }
 
     private void deleteTodo(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException {
         long id = Long.parseLong(request.getParameter("id"));
         todoDAO.deleteTodo(id);
-        response.sendRedirect("list");
+        response.sendRedirect(request.getContextPath() + "/todo/list");
     }
-
 
     private void handleError(HttpServletResponse response, Exception e) throws IOException {
         response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + e.getMessage());

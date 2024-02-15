@@ -11,7 +11,8 @@
 
 <div class="container">
     <h2 class="mt-5">Login</h2>
-    <form action="${pageContext.request.contextPath}/user/login" method="post">
+    <!-- Update the action path to correctly target the UserServlet handling the login -->
+    <form action="<%=request.getContextPath()%>/user/login" method="post">
         <div class="form-group">
             <label for="username">Username:</label>
             <input type="text" class="form-control" id="username" name="username" required>
@@ -23,7 +24,7 @@
         <button type="submit" class="btn btn-primary">Login</button>
     </form>
     <p class="mt-2">
-        Don't have an account? <a href="${pageContext.request.contextPath}/user/register">Register here</a>
+        Don't have an account? <a href="<%=request.getContextPath()%>/user/register">Register here</a>
     </p>
 </div>
 

@@ -2,7 +2,6 @@ package com.example.tododatabase.servlet;
 
 import com.example.tododatabase.dao.UserDAO;
 import com.example.tododatabase.model.User;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -18,7 +17,7 @@ public class UserServlet extends HttpServlet {
 
     @Override
     public void init() {
-        userDAO = new UserDAO();
+        this.userDAO = new UserDAO();
     }
 
     @Override
@@ -44,7 +43,7 @@ public class UserServlet extends HttpServlet {
                     break;
             }
         } catch (SQLException ex) {
-            handleError(response, ex);
+            throw new ServletException("Database error", ex);
         }
     }
 
@@ -58,7 +57,6 @@ public class UserServlet extends HttpServlet {
                     logoutUser(request, response);
                     break;
                 case "/register":
-                    // Forward to the registration form JSP
                     request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
                     break;
                 default:
@@ -66,85 +64,92 @@ public class UserServlet extends HttpServlet {
                     break;
             }
         } catch (Exception ex) {
-            handleError(response, ex);
+            throw new ServletException("Error processing request", ex);
         }
     }
 
-
-    private void registerUser(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException {
+    private void registerUser(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
         String username = request.getParameter("username");
-        String password = request.getParameter("password"); // Consider hashing the password for security
+        String password = request.getParameter("password"); // TODO: Hash the password for security
         String fullName = request.getParameter("fullName");
         String email = request.getParameter("email");
 
         User newUser = new User(username, password, fullName, email);
         userDAO.insertUser(newUser);
-        response.sendRedirect("login.jsp");
+        response.sendRedirect(request.getContextPath() + "/user/login"); // Redirect to login page after registration
     }
 
-    private void loginUser(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException, ServletException {
+    private void loginUser(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException, ServletException {
         String username = request.getParameter("username");
-        String password = request.getParameter("password");
+        String password = request.getParameter("password"); // TODO: Hash the password check for security
 
         User user = userDAO.checkLogin(username, password);
         if (user != null) {
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
-            response.sendRedirect("todo/list.jsp");
+            response.sendRedirect(request.getContextPath()+"/todo/list"); // Redirect to todo list after login
         } else {
             request.setAttribute("message", "Invalid username or password");
-            request.getRequestDispatcher("login.jsp").forward(request, response);
+            request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
         }
     }
 
-    private void updateUserProfile(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException {
-        String username = request.getParameter("username"); // Username is not updated but included for completeness
-        String fullName = request.getParameter("fullName");
-        String email = request.getParameter("email");
-        HttpSession session = request.getSession();
-        User user = (User) session.getAttribute("user");
+    private void updateUserProfile(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
+// Fetch user from session and update profile information
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("user") != null) {
+            User user = (User) session.getAttribute("user");
 
-        if (user != null) {
-            user.setFullName(fullName);
-            user.setEmail(email);
-            userDAO.updateUser(user);
-            session.setAttribute("user", user); // Update session
-            response.sendRedirect("profile.jsp");
+            // Update the user object with new profile information
+            user.setFullName(request.getParameter("fullName"));
+            user.setEmail(request.getParameter("email"));
+            // Here, you could add more fields to be updated as needed
+
+            // Update user in the database
+            boolean updated = userDAO.updateUser(user);
+            if(updated) {
+                // Update successful, redirect to profile page
+                response.sendRedirect(request.getContextPath() + "/user/profile");
+            } else {
+                // Update failed, redirect to an error page or display a message
+            }
         } else {
-            response.sendRedirect("login.jsp");
+            // No user in session, redirect to login page
+            response.sendRedirect(request.getContextPath() + "/user/login");
         }
     }
 
-    private void changeUserPassword(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException, ServletException {
-        String currentPassword = request.getParameter("currentPassword");
-        String newPassword = request.getParameter("newPassword");
-        HttpSession session = request.getSession();
-        User user = (User) session.getAttribute("user");
+    private void changeUserPassword(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException, ServletException {
+// Fetch user from session
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("user") != null) {
+            User user = (User) session.getAttribute("user");
+            String currentPassword = request.getParameter("currentPassword");
+            String newPassword = request.getParameter("newPassword");
 
-        if (user != null && user.getPassword().equals(currentPassword)) {
-            userDAO.updatePassword(user.getId(), newPassword); // Assuming this method exists and updates the DB
-            response.sendRedirect("profile.jsp");
+            // TODO: Validate current password, hash new password
+            boolean passwordChanged = userDAO.updatePassword(user.getId(), newPassword);
+            if(passwordChanged) {
+                // Password changed successfully, redirect to profile page
+                response.sendRedirect(request.getContextPath() + "/user/profile");
+            } else {
+                // Password change failed, redirect to an error page or display a message
+            }
         } else {
-            request.setAttribute("message", "Password update failed. Please check your inputs.");
-            request.getRequestDispatcher("change-password.jsp").forward(request, response);
+            // No user in session, redirect to login page
+            response.sendRedirect(request.getContextPath() + "/user/login");
         }
     }
 
-    private void logoutUser(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
+    private void logoutUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         if (session != null) {
-            session.invalidate();
+            session.invalidate(); // Invalidate the session to logout the user
         }
-        response.sendRedirect("login.jsp");
+        response.sendRedirect(request.getContextPath() + "/user/login"); // Redirect to login page after logout
     }
 
-    private void redirectToLogin(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    private void redirectToLogin(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
     }
 
