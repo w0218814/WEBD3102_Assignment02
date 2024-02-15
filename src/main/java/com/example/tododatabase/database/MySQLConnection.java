@@ -2,14 +2,16 @@ package com.example.tododatabase.database;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public class MySQLConnection {
 
     // Database URL, username and password
-    private static final String DATABASE_URL = "jdbc:mysql://localhost:3306/tododatabase";
-    private static final String DATABASE_USER = "yourUsername";
-    private static final String DATABASE_PASSWORD = "yourPassword";
+    private static final String DATABASE_URL = "jdbc:mysql://127.0.0.1:3306/tododatabase";
+    private static final String DATABASE_USER = "root";
+    private static final String DATABASE_PASSWORD = "password";
 
     // JDBC driver name
     private static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
