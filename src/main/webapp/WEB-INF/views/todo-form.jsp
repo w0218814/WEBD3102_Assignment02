@@ -27,7 +27,7 @@
         </div>
         <div class="form-group form-check">
             <label class="form-check-label">
-                <input class="form-check-input" type="checkbox" name="isDone" ${todo != null && todo.done ? 'checked' : ''}> Done
+                <input class="form-check-input" type="checkbox" name="isDone" ${todo != null && todo.isDone ? 'checked' : ''} value="true"> Done
             </label>
         </div>
         <button type="submit" class="btn btn-primary">${todo != null ? 'Update' : 'Submit'}</button>

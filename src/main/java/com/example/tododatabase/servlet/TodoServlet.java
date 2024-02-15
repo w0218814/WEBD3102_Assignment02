@@ -2,6 +2,7 @@ package com.example.tododatabase.servlet;
 
 import com.example.tododatabase.dao.TodoDAO;
 import com.example.tododatabase.model.Todo;
+import com.example.tododatabase.model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -35,6 +36,9 @@ public class TodoServlet extends HttpServlet {
                 action = "/list"; // default action
             }
             switch (action) {
+                case "/new":
+                    showNewForm(request, response);
+                    break;
                 case "/delete":
                     deleteTodo(request, response);
                     break;
@@ -73,8 +77,11 @@ public class TodoServlet extends HttpServlet {
         }
     }
 
-    private void listTodos(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, ServletException {
+    private void showNewForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
+    }
+
+    private void listTodos(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         try {
             List<Todo> listTodo = todoDAO.selectAllTodos();
             request.setAttribute("listTodo", listTodo);
@@ -85,8 +92,7 @@ public class TodoServlet extends HttpServlet {
         }
     }
 
-    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
             long id = Long.parseLong(request.getParameter("id"));
             Todo existingTodo = todoDAO.selectTodo(id);
@@ -98,16 +104,36 @@ public class TodoServlet extends HttpServlet {
         }
     }
 
-    private void insertTodo(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException, ParseException {
+    private void insertTodo(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        HttpSession session = request.getSession();
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null) {
+            // Redirect user to login page if not logged in
+            response.sendRedirect(request.getContextPath() + "/user/login");
+            return;
+        }
+
         String title = request.getParameter("title");
         String description = request.getParameter("description");
         String targetDateStr = request.getParameter("targetDate");
-        boolean isDone = Boolean.parseBoolean(request.getParameter("isDone"));
-        Date targetDate = new SimpleDateFormat("yyyy-MM-dd").parse(targetDateStr);
+        boolean isDone = "true".equals(request.getParameter("isDone"));
+        Date targetDate;
+        try {
+            targetDate = new SimpleDateFormat("yyyy-MM-dd").parse(targetDateStr);
+        } catch (ParseException e) {
+            LOGGER.log(Level.SEVERE, "Error parsing targetDate", e);
+            handleError(response, e);
+            return;
+        }
 
         Todo newTodo = new Todo(title, description, targetDate, isDone);
-        todoDAO.insertTodo(newTodo);
+        try {
+            todoDAO.insertTodo(newTodo, loggedInUser.getId());
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error inserting todo", e);
+            handleError(response, e);
+            return;
+        }
         response.sendRedirect(request.getContextPath() + "/todo/list");
     }
 
