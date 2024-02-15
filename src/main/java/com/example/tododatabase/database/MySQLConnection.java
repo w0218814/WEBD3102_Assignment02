@@ -1,34 +1,30 @@
 package com.example.tododatabase.database;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 public class MySQLConnection {
 
-    // Database URL, username and password
-    private static final String DATABASE_URL = "jdbc:mysql://127.0.0.1:3306/tododatabase";
-    private static final String DATABASE_USER = "root";
-    private static final String DATABASE_PASSWORD = "password";
-
-    // JDBC driver name
-    private static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
+    // JNDI name that you configured in GlassFish for the JDBC Resource
+    private static final String JNDI_NAME = "java:comp/env/jdbc/myDataSource";
 
     public static Connection getConnection() {
         Connection connection = null;
         try {
-            // Register JDBC driver
-            Class.forName(JDBC_DRIVER);
+            // Obtain the DataSource from JNDI
+            InitialContext context = new InitialContext();
+            DataSource dataSource = (DataSource) context.lookup(JNDI_NAME);
 
-            // Open a connection
-            connection = DriverManager.getConnection(DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD);
-        } catch (ClassNotFoundException e) {
-            // Handle error for Class.forName
+            // Get a connection from the pool
+            connection = dataSource.getConnection();
+        } catch (NamingException e) {
+            System.err.println("JNDI Lookup failed for the JDBC Resource: " + e.getMessage());
             e.printStackTrace();
         } catch (SQLException e) {
-            // Handle errors for JDBC
+            System.err.println("Failed to get a connection from the pool: " + e.getMessage());
             e.printStackTrace();
         }
         return connection;
