@@ -2,69 +2,57 @@ package com.example.tododatabase.dao;
 
 import com.example.tododatabase.database.MySQLConnection;
 import com.example.tododatabase.model.User;
+import org.mindrot.jbcrypt.BCrypt;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserDAO {
-    private static final String INSERT_USERS_SQL = "INSERT INTO users (username, password, fullName, email) VALUES (?, ?, ?, ?);";
-    private static final String SELECT_USER_BY_ID = "SELECT id, username, password, fullName, email FROM users WHERE id = ?";
+    private static final String INSERT_USERS_SQL = "INSERT INTO users (username, password, fullName, email, roleId) VALUES (?, ?, ?, ?, ?);";
+    private static final String SELECT_USER_BY_ID = "SELECT u.id, u.username, u.password, u.fullName, u.email, r.roleName FROM users u JOIN roles r ON u.roleId = r.roleId WHERE u.id = ?;";
     private static final String SELECT_ALL_USERS = "SELECT * FROM users";
     private static final String DELETE_USERS_SQL = "DELETE FROM users WHERE id = ?;";
-    private static final String UPDATE_USERS_SQL = "UPDATE users SET username = ?, password = ?, fullName = ?, email = ? WHERE id = ?;";
+    private static final String UPDATE_USERS_SQL = "UPDATE users SET username = ?, fullName = ?, email = ? WHERE id = ?;";
+    private static final String SELECT_USER_ROLE_SQL = "SELECT roleName FROM roles WHERE roleId = (SELECT roleId FROM users WHERE id = ?);";
+    private static final String CHECK_LOGIN_SQL = "SELECT u.*, r.roleName FROM users u INNER JOIN roles r ON u.roleId = r.roleId WHERE username = ?";
 
     public UserDAO() {}
 
-    // Create or insert user
     public void insertUser(User user) throws SQLException {
-        // Consider hashing the password before storing it
+        // Assuming role number 2 is to be assigned to all new users
+        int defaultRoleId = 2; // Explicitly set the default role ID
+
         try (Connection connection = MySQLConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_USERS_SQL)) {
             preparedStatement.setString(1, user.getUsername());
-            preparedStatement.setString(2, user.getPassword()); // Hash the password in the real application
+            String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
+            preparedStatement.setString(2, hashedPassword);
             preparedStatement.setString(3, user.getFullName());
             preparedStatement.setString(4, user.getEmail());
+            preparedStatement.setInt(5, defaultRoleId); // Use the default role ID here
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             printSQLException(e);
         }
     }
 
-    // Update user
-    public boolean updateUser(User user) throws SQLException {
-        boolean rowUpdated;
-        try (Connection connection = MySQLConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE_USERS_SQL)) {
-            statement.setString(1, user.getUsername());
-            statement.setString(2, user.getPassword()); // Hash the password in the real application
-            statement.setString(3, user.getFullName());
-            statement.setString(4, user.getEmail());
-            statement.setLong(5, user.getId());
 
-            rowUpdated = statement.executeUpdate() > 0;
-        }
-        return rowUpdated;
-    }
-
-    // Check login
     public User checkLogin(String username, String password) throws SQLException {
-        // Here you should hash the password before checking
-        String LOGIN_SQL = "SELECT * FROM users WHERE username = ? AND password = ?;";
         User user = null;
-
         try (Connection connection = MySQLConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(LOGIN_SQL)) {
+             PreparedStatement preparedStatement = connection.prepareStatement(CHECK_LOGIN_SQL)) {
             preparedStatement.setString(1, username);
-            preparedStatement.setString(2, password); // Hash password for real application
-            ResultSet resultSet = preparedStatement.executeQuery();
+            ResultSet rs = preparedStatement.executeQuery();
 
-            if (resultSet.next()) {
+            if (rs.next() && BCrypt.checkpw(password, rs.getString("password"))) {
                 user = new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("username"),
-                        resultSet.getString("password"), // Remember, this will be hashed
-                        resultSet.getString("fullName"),
-                        resultSet.getString("email"));
+                        rs.getLong("id"),
+                        rs.getString("username"),
+                        rs.getString("password"), // Consider security implications of storing the hash in the user object
+                        rs.getString("fullName"),
+                        rs.getString("email"),
+                        rs.getString("roleName")); // Assumes User model includes this field
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -72,15 +60,12 @@ public class UserDAO {
         return user;
     }
 
-    // Update password
     public boolean updatePassword(long id, String newPassword) throws SQLException {
-        // Here you should hash the newPassword before updating
-        String UPDATE_PASSWORD_SQL = "UPDATE users SET password = ? WHERE id = ?;";
         boolean rowUpdated;
-
+        String hashedNewPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
         try (Connection connection = MySQLConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE_PASSWORD_SQL)) {
-            statement.setString(1, newPassword); // Hash newPassword for real application
+             PreparedStatement statement = connection.prepareStatement("UPDATE users SET password = ? WHERE id = ?;")) {
+            statement.setString(1, hashedNewPassword);
             statement.setLong(2, id);
 
             rowUpdated = statement.executeUpdate() > 0;
@@ -88,7 +73,6 @@ public class UserDAO {
         return rowUpdated;
     }
 
-    // Select user by id
     public User selectUser(long id) {
         User user = null;
         try (Connection connection = MySQLConnection.getConnection();
@@ -109,7 +93,6 @@ public class UserDAO {
         return user;
     }
 
-    // Select all users
     public List<User> selectAllUsers() {
         List<User> users = new ArrayList<>();
         try (Connection connection = MySQLConnection.getConnection();
@@ -130,7 +113,6 @@ public class UserDAO {
         return users;
     }
 
-    // Delete user
     public boolean deleteUser(long id) throws SQLException {
         boolean rowDeleted;
         try (Connection connection = MySQLConnection.getConnection();
@@ -140,6 +122,41 @@ public class UserDAO {
         }
         return rowDeleted;
     }
+
+    public boolean updateUser(User user) throws SQLException {
+        boolean rowUpdated;
+        try (Connection connection = MySQLConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "UPDATE users SET username = ?, fullName = ?, email = ? WHERE id = ?;")) {
+            statement.setString(1, user.getUsername());
+            statement.setString(2, user.getFullName());
+            statement.setString(3, user.getEmail());
+            statement.setLong(4, user.getId());
+
+            rowUpdated = statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            printSQLException(e);
+            rowUpdated = false;
+        }
+        return rowUpdated;
+    }
+
+    public String getUserRole(long userId) throws SQLException {
+        String role = null;
+        try (Connection connection = MySQLConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(
+                     "SELECT roleName FROM roles JOIN users ON roles.roleId = users.roleId WHERE users.id = ?")) {
+            preparedStatement.setLong(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                role = resultSet.getString("roleName");
+            }
+        } catch (SQLException e) {
+            printSQLException(e);
+        }
+        return role;
+    }
+
 
     private void printSQLException(SQLException ex) {
         for (Throwable e : ex) {
