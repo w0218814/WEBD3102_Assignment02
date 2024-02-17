@@ -24,9 +24,7 @@ public class TodoDAO {
             preparedStatement.setDate(4, new Date(todo.getTargetDate().getTime()));
             preparedStatement.setBoolean(5, todo.isDone());
             preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            printSQLException(e);
-        }
+        } // SQLException is thrown up to the caller
     }
 
     public boolean updateTodo(Todo todo) throws SQLException {
@@ -44,7 +42,7 @@ public class TodoDAO {
         return rowUpdated;
     }
 
-    public Todo selectTodo(long id) {
+    public Todo selectTodo(long id) throws SQLException {
         Todo todo = null;
         try (Connection connection = MySQLConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SELECT_TODO_BY_ID)) {
@@ -58,13 +56,11 @@ public class TodoDAO {
                 boolean isDone = rs.getBoolean("isDone");
                 todo = new Todo(id, title, description, targetDate, isDone);
             }
-        } catch (SQLException e) {
-            printSQLException(e);
         }
         return todo;
     }
 
-    public List<Todo> selectAllTodos() {
+    public List<Todo> selectAllTodos() throws SQLException {
         List<Todo> todos = new ArrayList<>();
         try (Connection connection = MySQLConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_TODOS)) {
@@ -78,8 +74,6 @@ public class TodoDAO {
                 boolean isDone = rs.getBoolean("isDone");
                 todos.add(new Todo(id, title, description, targetDate, isDone));
             }
-        } catch (SQLException e) {
-            printSQLException(e);
         }
         return todos;
     }
@@ -89,7 +83,6 @@ public class TodoDAO {
         try (Connection connection = MySQLConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(DELETE_TODOS_SQL)) {
             statement.setLong(1, id);
-
             rowDeleted = statement.executeUpdate() > 0;
         }
         return rowDeleted;

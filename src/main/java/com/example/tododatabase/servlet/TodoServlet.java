@@ -31,10 +31,10 @@ public class TodoServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getPathInfo();
+        if (action == null) {
+            action = "/list"; // Default action
+        }
         try {
-            if (action == null) {
-                action = "/list"; // default action
-            }
             switch (action) {
                 case "/new":
                     showNewForm(request, response);
@@ -50,6 +50,9 @@ public class TodoServlet extends HttpServlet {
                     listTodos(request, response);
                     break;
             }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Database access error", e);
+            handleError(response, e);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error in GET request", e);
             handleError(response, e);
@@ -61,16 +64,19 @@ public class TodoServlet extends HttpServlet {
         String action = request.getPathInfo();
         try {
             switch (action) {
-                case "/new":
+                case "/insert":
                     insertTodo(request, response);
                     break;
                 case "/update":
                     updateTodo(request, response);
                     break;
                 default:
-                    response.sendRedirect(request.getContextPath() + "/todo/list");
+                    listTodos(request, response);
                     break;
             }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Database access error", e);
+            handleError(response, e);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error in POST request", e);
             handleError(response, e);
@@ -80,85 +86,75 @@ public class TodoServlet extends HttpServlet {
     private void showNewForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
     }
-
-    private void listTodos(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        try {
-            List<Todo> listTodo = todoDAO.selectAllTodos();
-            request.setAttribute("listTodo", listTodo);
-            request.getRequestDispatcher("/WEB-INF/views/todo-list.jsp").forward(request, response);
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error listing todos", e);
-            handleError(response, e);
-        }
-    }
-
-    private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        try {
-            long id = Long.parseLong(request.getParameter("id"));
-            Todo existingTodo = todoDAO.selectTodo(id);
-            request.setAttribute("todo", existingTodo);
-            request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error showing edit form", e);
-            handleError(response, e);
-        }
-    }
-
     private void insertTodo(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        HttpSession session = request.getSession();
-        User loggedInUser = (User) session.getAttribute("user");
-        if (loggedInUser == null) {
-            // Redirect user to login page if not logged in
-            response.sendRedirect(request.getContextPath() + "/user/login");
-            return;
-        }
-
         String title = request.getParameter("title");
         String description = request.getParameter("description");
-        String targetDateStr = request.getParameter("targetDate");
-        boolean isDone = "true".equals(request.getParameter("isDone"));
         Date targetDate;
         try {
-            targetDate = new SimpleDateFormat("yyyy-MM-dd").parse(targetDateStr);
+            targetDate = new SimpleDateFormat("yyyy-MM-dd").parse(request.getParameter("targetDate"));
         } catch (ParseException e) {
-            LOGGER.log(Level.SEVERE, "Error parsing targetDate", e);
+            LOGGER.log(Level.SEVERE, "Error parsing target date", e);
             handleError(response, e);
+            return;
+        }
+        boolean isDone = "on".equals(request.getParameter("isDone"));
+
+        HttpSession session = request.getSession();
+        User currentUser = (User) session.getAttribute("user");
+        if (currentUser == null) {
+            response.sendRedirect(request.getContextPath() + "/user/login");
             return;
         }
 
         Todo newTodo = new Todo(title, description, targetDate, isDone);
         try {
-            todoDAO.insertTodo(newTodo, loggedInUser.getId());
+            todoDAO.insertTodo(newTodo, currentUser.getId());
+            response.sendRedirect(request.getContextPath() + "/todo/list");
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error inserting todo", e);
+            LOGGER.log(Level.SEVERE, "Error inserting new todo", e);
             handleError(response, e);
-            return;
         }
-        response.sendRedirect(request.getContextPath() + "/todo/list");
     }
 
-    private void updateTodo(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException, ParseException {
+    private void listTodos(HttpServletRequest request, HttpServletResponse response) throws SQLException, ServletException, IOException {
+        List<Todo> listTodo = todoDAO.selectAllTodos();
+        request.setAttribute("listTodo", listTodo);
+        request.getRequestDispatcher("/WEB-INF/views/todo-list.jsp").forward(request, response);
+    }
+
+    private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws SQLException, ServletException, IOException {
+        long id = Long.parseLong(request.getParameter("id"));
+        Todo existingTodo = todoDAO.selectTodo(id);
+        request.setAttribute("todo", existingTodo);
+        request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
+    }
+
+    private void updateTodo(HttpServletRequest request, HttpServletResponse response) throws IOException, SQLException {
         long id = Long.parseLong(request.getParameter("id"));
         String title = request.getParameter("title");
         String description = request.getParameter("description");
-        String targetDateStr = request.getParameter("targetDate");
-        boolean isDone = Boolean.parseBoolean(request.getParameter("isDone"));
-        Date targetDate = new SimpleDateFormat("yyyy-MM-dd").parse(targetDateStr);
+        Date targetDate;
+        try {
+            targetDate = new SimpleDateFormat("yyyy-MM-dd").parse(request.getParameter("targetDate"));
+        } catch (ParseException e) {
+            LOGGER.log(Level.SEVERE, "Error parsing target date", e);
+            handleError(response, e);
+            return;
+        }
+        boolean isDone = "on".equals(request.getParameter("isDone"));
 
         Todo todo = new Todo(id, title, description, targetDate, isDone);
         todoDAO.updateTodo(todo);
         response.sendRedirect(request.getContextPath() + "/todo/list");
     }
 
-    private void deleteTodo(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException {
+    private void deleteTodo(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
         long id = Long.parseLong(request.getParameter("id"));
         todoDAO.deleteTodo(id);
         response.sendRedirect(request.getContextPath() + "/todo/list");
     }
 
     private void handleError(HttpServletResponse response, Exception e) throws IOException {
-        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + e.getMessage());
+        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server error: " + e.getMessage());
     }
 }

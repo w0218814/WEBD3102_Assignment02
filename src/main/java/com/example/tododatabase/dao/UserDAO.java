@@ -19,24 +19,20 @@ public class UserDAO {
 
     public UserDAO() {}
 
-    public void insertUser(User user) throws SQLException {
-        // Assuming role number 2 is to be assigned to all new users
-        int defaultRoleId = 2; // Explicitly set the default role ID
-
+    public void insertUser(User user, String hashedPassword) throws SQLException {
         try (Connection connection = MySQLConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_USERS_SQL)) {
             preparedStatement.setString(1, user.getUsername());
-            String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
-            preparedStatement.setString(2, hashedPassword);
+            preparedStatement.setString(2, hashedPassword); // Use the separate hashedPassword parameter
             preparedStatement.setString(3, user.getFullName());
             preparedStatement.setString(4, user.getEmail());
-            preparedStatement.setInt(5, defaultRoleId); // Use the default role ID here
+            // Assume the role ID for a regular user is known, e.g., 2 for 'user'
+            preparedStatement.setInt(5, 2); // Assuming '2' is the role ID for 'user'
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             printSQLException(e);
         }
     }
-
 
     public User checkLogin(String username, String password) throws SQLException {
         User user = null;
@@ -49,10 +45,10 @@ public class UserDAO {
                 user = new User(
                         rs.getLong("id"),
                         rs.getString("username"),
-                        rs.getString("password"), // Consider security implications of storing the hash in the user object
+                        // Do not store the password hash in the session or user object
                         rs.getString("fullName"),
                         rs.getString("email"),
-                        rs.getString("roleName")); // Assumes User model includes this field
+                        rs.getString("roleName")); // Ensure the User model includes roleName
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -85,7 +81,8 @@ public class UserDAO {
                 String password = rs.getString("password");
                 String fullName = rs.getString("fullName");
                 String email = rs.getString("email");
-                user = new User(id, username, password, fullName, email);
+                String roleName = rs.getString("roleName"); // This assumes you have a roleName field in your User model
+                user = new User(id, username, fullName, email, roleName); // Corrected to exclude the password
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -105,7 +102,7 @@ public class UserDAO {
                 String password = rs.getString("password");
                 String fullName = rs.getString("fullName");
                 String email = rs.getString("email");
-                users.add(new User(id, username, password, fullName, email));
+                users.add(new User(id, username, password, fullName, email)); // Assuming constructor without roleName for list
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -126,8 +123,7 @@ public class UserDAO {
     public boolean updateUser(User user) throws SQLException {
         boolean rowUpdated;
         try (Connection connection = MySQLConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(
-                     "UPDATE users SET username = ?, fullName = ?, email = ? WHERE id = ?;")) {
+             PreparedStatement statement = connection.prepareStatement(UPDATE_USERS_SQL)) {
             statement.setString(1, user.getUsername());
             statement.setString(2, user.getFullName());
             statement.setString(3, user.getEmail());
@@ -144,8 +140,7 @@ public class UserDAO {
     public String getUserRole(long userId) throws SQLException {
         String role = null;
         try (Connection connection = MySQLConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(
-                     "SELECT roleName FROM roles JOIN users ON roles.roleId = users.roleId WHERE users.id = ?")) {
+             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_USER_ROLE_SQL)) {
             preparedStatement.setLong(1, userId);
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
@@ -156,7 +151,6 @@ public class UserDAO {
         }
         return role;
     }
-
 
     private void printSQLException(SQLException ex) {
         for (Throwable e : ex) {
