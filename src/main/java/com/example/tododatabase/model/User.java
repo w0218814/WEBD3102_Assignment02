@@ -1,6 +1,11 @@
 package com.example.tododatabase.model;
 
-public class User {
+import java.io.Serializable;
+import java.util.Objects;
+
+public class User implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private long id;
     private String username;
     private String fullName;
@@ -71,5 +76,35 @@ public class User {
 
     public void setRoleName(String roleName) {
         this.roleName = roleName;
+    }
+
+    // toString method
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", fullName='" + fullName + '\'' +
+                ", email='" + email + '\'' +
+                ", roleName='" + roleName + '\'' +
+                '}';
+    }
+
+    // equals and hashCode methods
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return id == user.id &&
+                Objects.equals(username, user.username) &&
+                Objects.equals(fullName, user.fullName) &&
+                Objects.equals(email, user.email) &&
+                Objects.equals(roleName, user.roleName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, username, fullName, email, roleName);
     }
 }

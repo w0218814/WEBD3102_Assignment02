@@ -18,7 +18,7 @@ public class UserServlet extends HttpServlet {
 
     @Override
     public void init() {
-        this.userDAO = new UserDAO(); // Ensure this is connected to your DB properly
+        this.userDAO = new UserDAO(); // Ensure this is correctly connected to your DB
     }
 
     @Override
@@ -45,7 +45,7 @@ public class UserServlet extends HttpServlet {
                     break;
             }
         } catch (SQLException ex) {
-            throw new ServletException("Database error", ex);
+            handleError(request, response, "Database error", ex.getMessage());
         }
     }
 
@@ -60,7 +60,7 @@ public class UserServlet extends HttpServlet {
                     logoutUser(request, response);
                     break;
                 case "/register":
-                    request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
+                    showRegistrationForm(request, response);
                     break;
                 case "/profile":
                     showProfile(request, response);
@@ -73,99 +73,100 @@ public class UserServlet extends HttpServlet {
                     break;
             }
         } catch (Exception ex) {
-            throw new ServletException("Error processing request", ex);
+            handleError(request, response, "Error processing request", ex.getMessage());
         }
     }
 
     private void registerUser(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException {
+        // Implement user input validation here
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String fullName = request.getParameter("fullName");
         String email = request.getParameter("email");
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
-        // Assuming User model has been adjusted to not include password in constructor for security reasons
-        User newUser = new User(username, fullName, email); // Updated constructor
-        userDAO.insertUser(newUser, hashedPassword); // Updated method to include hashed password separately
-        response.sendRedirect(request.getContextPath() + "/user/login"); // Redirect after registration
+        User newUser = new User(username, fullName, email);
+        userDAO.insertUser(newUser, hashedPassword);
+        response.sendRedirect(request.getContextPath() + "/user/login");
     }
 
-
     private void loginUser(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException, ServletException {
+            throws IOException, ServletException {
+        // Implement user input validation here
         String username = request.getParameter("username");
         String password = request.getParameter("password");
 
-        User user = userDAO.checkLogin(username, password);
-        if (user != null) {
-            HttpSession session = request.getSession();
-            session.setAttribute("user", user);
+        try {
+            User user = userDAO.checkLogin(username, password);
+            if (user != null) {
+                HttpSession session = request.getSession();
+                session.setAttribute("user", user);
+                session.setMaxInactiveInterval(30 * 60); // Set session to expire after 30 minutes
 
-            String role = userDAO.getUserRole(user.getId());
-            if ("admin".equals(role)) {
-                response.sendRedirect(request.getContextPath() + "/user/adminConsole"); // Redirect to the admin console
-            } else if ("user".equals(role)) {
-                response.sendRedirect(request.getContextPath() + "/todo/list"); // Redirect to the user todo list
+                String role = userDAO.getUserRole(user.getId());
+                navigateBasedOnRole(request, response, role);
             } else {
-                session.invalidate(); // Invalidating the session for security reasons
-                request.setAttribute("message", "Access Denied: Your role is not recognized.");
+                request.setAttribute("message", "Invalid username or password.");
                 request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
             }
-        } else {
-            request.setAttribute("message", "Invalid username or password");
-            request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
+        } catch (SQLException e) {
+            handleError(request, response, "Database error during login.", e.getMessage());
         }
     }
-
 
     private void updateUserProfile(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException {
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("user") != null) {
-            User user = (User) session.getAttribute("user");
+        HttpSession session = validateSession(request, response);
+        if (session == null) return; // Session validation method handles redirection
 
-            user.setFullName(request.getParameter("fullName"));
-            user.setEmail(request.getParameter("email"));
-            // Assume no role update here
+        User user = (User) session.getAttribute("user");
+        String fullName = request.getParameter("fullName");
+        String email = request.getParameter("email");
 
-            boolean updated = userDAO.updateUser(user); // Ensure this method correctly updates the user
-            if (updated) {
-                session.setAttribute("user", user); // Update session
-                response.sendRedirect(request.getContextPath() + "/user/profile"); // Redirect to user profile
-            } else {
-                response.sendRedirect(request.getContextPath() + "/error.jsp"); // Or handle error properly
-            }
+        user.setFullName(fullName);
+        user.setEmail(email);
+
+        boolean updated = userDAO.updateUser(user);
+        if (updated) {
+            session.setAttribute("user", user); // Refresh session user data
+            response.sendRedirect(request.getContextPath() + "/user/profile");
         } else {
-            response.sendRedirect(request.getContextPath() + "/user/login"); // Redirect to login if session not found
+            try {
+                handleError(request, response, "Update Failed", "Unable to update user profile.");
+            } catch (ServletException e) {
+                throw new IOException("Error forwarding to the error page.", e);
+            }
         }
     }
-
     private void changeUserPassword(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException {
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("user") != null) {
-            User user = (User) session.getAttribute("user");
-            String newPassword = request.getParameter("newPassword");
-            String hashedNewPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+        HttpSession session = validateSession(request, response);
+        if (session == null) return; // Session validation method handles redirection
 
-            boolean passwordChanged = userDAO.updatePassword(user.getId(), hashedNewPassword); // Ensure this method exists and works
-            if (passwordChanged) {
-                response.sendRedirect(request.getContextPath() + "/user/profile"); // Redirect to profile
-            } else {
-                response.sendRedirect(request.getContextPath() + "/error.jsp"); // Or handle error
-            }
+        User user = (User) session.getAttribute("user");
+        String newPassword = request.getParameter("newPassword");
+        String hashedNewPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+
+        boolean passwordChanged = userDAO.updatePassword(user.getId(), hashedNewPassword);
+        if (passwordChanged) {
+            response.sendRedirect(request.getContextPath() + "/user/profile");
         } else {
-            response.sendRedirect(request.getContextPath() + "/user/login");
+            try {
+                handleError(request, response, "Password Change Failed", "Unable to change password.");
+            } catch (ServletException e) {
+                throw new IOException("Error forwarding to the error page.", e);
+            }
         }
     }
+
 
     private void logoutUser(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         HttpSession session = request.getSession(false);
         if (session != null) {
-            session.invalidate(); // Invalidate session
-            response.sendRedirect(request.getContextPath() + "/user/login"); // Redirect to login
+            session.invalidate();
+            response.sendRedirect(request.getContextPath() + "/user/login");
         }
     }
 
@@ -174,35 +175,53 @@ public class UserServlet extends HttpServlet {
         request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
     }
 
+    private void showRegistrationForm(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
+    }
+
     private void showProfile(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("user") != null) {
+        if (validateSession(request, response) != null) {
             request.getRequestDispatcher("/WEB-INF/views/profile.jsp").forward(request, response);
-        } else {
-            redirectToLogin(request, response);
         }
     }
 
     private void showAdminDashboard(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("user") != null) {
-            User user = (User) session.getAttribute("user");
-            try {
-                String role = userDAO.getUserRole(user.getId());
-                if ("admin".equals(role)) {
-                    request.getRequestDispatcher("/WEB-INF/views/adminConsole.jsp").forward(request, response);
-                } else {
-                    // If the user is not an admin, redirect to a different page or show an error
-                    request.setAttribute("message", "Access Denied: You do not have permission to view the admin console.");
-                    request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
-                }
-            } catch (SQLException e) {
-                throw new ServletException("Database error while retrieving user role", e);
-            }
-        } else {
-            redirectToLogin(request, response);
+        if (validateSession(request, response) != null) {
+            request.getRequestDispatcher("/WEB-INF/views/adminConsole.jsp").forward(request, response);
         }
+    }
+
+    private HttpSession validateSession(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/user/login");
+            return null;
+        }
+        return session;
+    }
+
+    private void navigateBasedOnRole(HttpServletRequest request, HttpServletResponse response, String role)
+            throws ServletException, IOException {
+        if ("admin".equals(role)) {
+            request.getRequestDispatcher("/WEB-INF/views/adminConsole.jsp").forward(request, response);
+        } else if ("user".equals(role)) {
+            request.getRequestDispatcher("/WEB-INF/views/todo-list.jsp").forward(request, response);
+        } else {
+            HttpSession session = request.getSession(false);
+            if (session != null) session.invalidate();
+            request.setAttribute("message", "Access Denied: Your role is not recognized.");
+            request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
+        }
+    }
+
+    private void handleError(HttpServletRequest request, HttpServletResponse response, String title, String message)
+            throws ServletException, IOException {
+        request.setAttribute("title", title);
+        request.setAttribute("message", message);
+        request.getRequestDispatcher("/WEB-INF/views/error.jsp").forward(request, response);
     }
 }
