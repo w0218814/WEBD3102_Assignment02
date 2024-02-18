@@ -40,9 +40,10 @@ public class LoginServlet extends HttpServlet {
                     RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/adminConsole.jsp");
                     dispatcher.forward(request, response);
                 } else if ("user".equalsIgnoreCase(user.getRoleName())) {
-                    // Forward to the user todo list view
-                    RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/todo-list.jsp");
-                    dispatcher.forward(request, response);
+
+                    // Redirect to the user todo list view
+                    response.sendRedirect(request.getContextPath() + "/todo/list");
+
                 } else {
                     // Handle unknown role or redirect to an error page or login page with an error message
                     response.sendRedirect(request.getContextPath() + "/login?error=Role not recognized");

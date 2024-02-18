@@ -28,77 +28,80 @@ public class TodoServlet extends HttpServlet {
         this.todoDAO = new TodoDAO(); // Ensure this is correctly connected to your DB
     }
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        HttpSession session = request.getSession(false); // Check if session exists
-        if (session == null || session.getAttribute("user") == null) {
-            response.sendRedirect(request.getContextPath() + "/user/login"); // Redirect to login page
-            return;
-        }
-
-        String action = request.getPathInfo();
-        if (action == null) {
-            action = "/list"; // Default action
-        }
-
-        try {
-            switch (action) {
-                case "/new":
-                    showNewForm(request, response);
-                    break;
-                case "/delete":
-                    deleteTodo(request, response);
-                    break;
-                case "/edit":
-                    showEditForm(request, response);
-                    break;
-                case "/list":
-                default:
-                    listTodos(request, response);
-                    break;
-            }
-        } catch (SQLException ex) {
-            LOGGER.log(Level.SEVERE, "Database error", ex);
-            throw new ServletException("Database error", ex);
-        }
-    }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
-            response.sendRedirect(request.getContextPath() + "/user/login");
-            return;
-        }
-
-        String action = request.getPathInfo();
-
-        try {
-            switch (action) {
-                case "/insert":
-                    insertTodo(request, response);
-                    break;
-                case "/update":
-                    updateTodo(request, response);
-                    break;
-                default:
-                    listTodos(request, response);
-                    break;
-            }
-        } catch (SQLException ex) {
-            LOGGER.log(Level.SEVERE, "Database error", ex);
-            throw new ServletException("Database error", ex);
-        }
+protected void doGet(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+    HttpSession session = request.getSession(false); // Check if session exists
+    if (session == null || session.getAttribute("user") == null) {
+        response.sendRedirect(request.getContextPath() + "/user/login"); // Redirect to login page
+        return;
     }
 
-    private void showNewForm(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
+    String action = request.getPathInfo();
+    if (action == null) {
+        action = "/list"; // Default action
     }
 
-    private void insertTodo(HttpServletRequest request, HttpServletResponse response)
+    try {
+        switch (action) {
+            case "/new":
+                showNewForm(request, response);
+                break;
+            case "/delete":
+                deleteTodo(request, response);
+                break;
+            case "/edit":
+                showEditForm(request, response);
+                break;
+            case "/list":
+            default:
+                listTodos(request, response);
+                break;
+        }
+    } catch (SQLException ex) {
+        LOGGER.log(Level.SEVERE, "Database error", ex);
+        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database operation failed.");
+    }
+}
+
+
+@Override
+protected void doPost(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+    HttpSession session = request.getSession(false);
+    if (session == null || session.getAttribute("user") == null) {
+        response.sendRedirect(request.getContextPath() + "/user/login");
+        return;
+    }
+
+    String action = request.getPathInfo();
+
+    try {
+        switch (action) {
+            case "/insert":
+                insertTodo(request, response);
+                break;
+            case "/update":
+                updateTodo(request, response);
+                break;
+            default:
+                listTodos(request, response);
+                break;
+        }
+    } catch (SQLException ex) {
+        LOGGER.log(Level.SEVERE, "Database error", ex);
+        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database operation failed.");
+    }
+}
+
+private void showNewForm(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+    request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
+}
+
+
+private void insertTodo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         String title = request.getParameter("title");
         String description = request.getParameter("description");
