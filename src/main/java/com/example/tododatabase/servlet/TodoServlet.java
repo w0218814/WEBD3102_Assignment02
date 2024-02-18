@@ -25,14 +25,21 @@ public class TodoServlet extends HttpServlet {
 
     @Override
     public void init() {
-        this.todoDAO = new TodoDAO();
+        this.todoDAO = new TodoDAO(); // Ensure this is correctly connected to your DB
     }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        HttpSession session = request.getSession(false); // Check if session exists
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/user/login"); // Redirect to login page
+            return;
+        }
+
         String action = request.getPathInfo();
         if (action == null) {
-            action = "/list"; // Default action if no action specified
+            action = "/list"; // Default action
         }
 
         try {
@@ -52,12 +59,20 @@ public class TodoServlet extends HttpServlet {
                     break;
             }
         } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, "Database error", ex);
             throw new ServletException("Database error", ex);
         }
     }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/user/login");
+            return;
+        }
+
         String action = request.getPathInfo();
 
         try {
@@ -73,9 +88,11 @@ public class TodoServlet extends HttpServlet {
                     break;
             }
         } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, "Database error", ex);
             throw new ServletException("Database error", ex);
         }
     }
+
     private void showNewForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
@@ -93,18 +110,22 @@ public class TodoServlet extends HttpServlet {
         }
 
         boolean isDone = "on".equals(request.getParameter("isDone"));
-        HttpSession session = request.getSession();
+        HttpSession session = request.getSession(); // Use existing session
         User currentUser = (User) session.getAttribute("user");
-        long userId = currentUser.getId(); // Assuming User object has getId() method to retrieve user ID
+        long userId = currentUser.getId();
 
-        Todo newTodo = new Todo(title, description, targetDate, isDone); // Assuming this constructor exists in Todo class
-        todoDAO.insertTodo(newTodo, userId); // Pass both Todo object and userId to insertTodo
+        // Adjusted to use the constructor with userId for creating a new Todo object
+        Todo newTodo = new Todo(0, userId, title, description, targetDate, isDone); // Assuming ID is auto-generated and not needed here
+        todoDAO.insertTodo(newTodo); // Corrected to match the updated TodoDAO method signature
         response.sendRedirect("list");
     }
-
     private void listTodos(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
-        List<Todo> listTodo = todoDAO.selectAllTodos();
+        HttpSession session = request.getSession();
+        User currentUser = (User) session.getAttribute("user");
+        long userId = currentUser.getId();
+
+        List<Todo> listTodo = todoDAO.selectAllTodos(userId); // Correct method call to TodoDAO
         request.setAttribute("listTodo", listTodo);
         request.getRequestDispatcher("/WEB-INF/views/todo-list.jsp").forward(request, response);
     }
@@ -112,7 +133,9 @@ public class TodoServlet extends HttpServlet {
     private void showEditForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         long id = Long.parseLong(request.getParameter("id"));
-        Todo existingTodo = todoDAO.selectTodo(id);
+        long userId = ((User) request.getSession().getAttribute("user")).getId(); // Fetch userId from session
+
+        Todo existingTodo = todoDAO.selectTodo(id, userId); // Corrected to include userId
         request.setAttribute("todo", existingTodo);
         request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
     }
@@ -130,19 +153,19 @@ public class TodoServlet extends HttpServlet {
         }
 
         boolean isDone = "on".equals(request.getParameter("isDone"));
-        Todo todo = new Todo(id, title, description, targetDate, isDone);
-        todoDAO.updateTodo(todo);
-        response.sendRedirect("list");
-    }
-    private void deleteTodo(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException, SQLException {
-        long id = Long.parseLong(request.getParameter("id"));
-        todoDAO.deleteTodo(id);
+        long userId = ((User) request.getSession().getAttribute("user")).getId(); // Fetch userId from session
+
+        Todo todo = new Todo(id, userId, title, description, targetDate, isDone); // Correct constructor call
+        todoDAO.updateTodo(todo); // Correct method call to TodoDAO
         response.sendRedirect("list");
     }
 
-    private void handleError(HttpServletResponse response, Exception e)
-            throws IOException {
-        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+    private void deleteTodo(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
+        long id = Long.parseLong(request.getParameter("id"));
+        long userId = ((User)request.getSession().getAttribute("user")).getId(); // Fetch userId from session
+
+        todoDAO.deleteTodo(id, userId); // Correct method call to TodoDAO for user-specific deletion
+        response.sendRedirect("list");
     }
 }

@@ -1,4 +1,3 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,8 +10,8 @@
 
 <div class="container">
     <h2 class="mt-5">Login</h2>
-    <!-- Update the action path to correctly target the UserServlet handling the login -->
-    <form action="<%=request.getContextPath()%>/user/login" method="post">
+    <!-- Corrected action path to target the LoginServlet -->
+    <form action="<%=request.getContextPath()%>/login" method="post">
         <div class="form-group">
             <label for="username">Username:</label>
             <input type="text" class="form-control" id="username" name="username" required>
