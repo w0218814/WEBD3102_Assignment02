@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.example.tododatabase.model.Todo" %>
 <%@ page import="java.util.List" %>
+<%@ include file="header.jsp" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,10 +35,14 @@
             <td><%= todo.getTitle() %></td>
             <td><%= todo.getDescription() %></td>
             <td><%= todo.getTargetDate().toString() %></td>
-            <td><%= todo.isDone ? "Done" : "Pending" %></td> <!-- Direct access to public field -->
+            <td><%= todo.isDone ? "Done" : "Pending" %></td>
             <td>
                 <a href="<%= request.getContextPath() %>/todo/edit?id=<%= todo.getId() %>" class="btn btn-primary">Edit</a>
-                <a href="<%= request.getContextPath() %>/todo/delete?id=<%= todo.getId() %>" class="btn btn-danger">Delete</a>
+                <!-- Change the link for delete to a form to handle the POST request -->
+                <form action="<%= request.getContextPath() %>/todo/delete" method="post" style="display: inline;">
+                    <input type="hidden" name="id" value="<%= todo.getId() %>" />
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
             </td>
         </tr>
         <%
