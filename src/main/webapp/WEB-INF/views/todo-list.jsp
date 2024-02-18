@@ -34,7 +34,7 @@
             <td><%= todo.getTitle() %></td>
             <td><%= todo.getDescription() %></td>
             <td><%= todo.getTargetDate().toString() %></td>
-            <td><%= todo.isDone() ? "Done" : "Pending" %></td>
+            <td><%= todo.isDone ? "Done" : "Pending" %></td> <!-- Direct access to public field -->
             <td>
                 <a href="<%= request.getContextPath() %>/todo/edit?id=<%= todo.getId() %>" class="btn btn-primary">Edit</a>
                 <a href="<%= request.getContextPath() %>/todo/delete?id=<%= todo.getId() %>" class="btn btn-danger">Delete</a>

@@ -25,83 +25,90 @@ public class TodoServlet extends HttpServlet {
 
     @Override
     public void init() {
-        this.todoDAO = new TodoDAO(); // Ensure this is correctly connected to your DB
+        this.todoDAO = new TodoDAO();
     }
-
 
     @Override
-protected void doGet(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException {
-    HttpSession session = request.getSession(false); // Check if session exists
-    if (session == null || session.getAttribute("user") == null) {
-        response.sendRedirect(request.getContextPath() + "/user/login"); // Redirect to login page
-        return;
-    }
-
-    String action = request.getPathInfo();
-    if (action == null) {
-        action = "/list"; // Default action
-    }
-
-    try {
-        switch (action) {
-            case "/new":
-                showNewForm(request, response);
-                break;
-            case "/delete":
-                deleteTodo(request, response);
-                break;
-            case "/edit":
-                showEditForm(request, response);
-                break;
-            case "/list":
-            default:
-                listTodos(request, response);
-                break;
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/user/login");
+            return;
         }
-    } catch (SQLException ex) {
-        LOGGER.log(Level.SEVERE, "Database error", ex);
-        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database operation failed.");
+
+        String action = request.getPathInfo() != null ? request.getPathInfo() : "/list";
+
+        try {
+            switch (action) {
+                case "/new":
+                    showNewForm(request, response);
+                    break;
+                case "/edit":
+                    showEditForm(request, response);
+                    break;
+                case "/list":
+                default:
+                    listTodos(request, response);
+                    break;
+            }
+        } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, "Database error", ex);
+            throw new ServletException("Database error", ex);
+        }
     }
-}
 
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/user/login");
+            return;
+        }
 
-@Override
-protected void doPost(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException {
-    HttpSession session = request.getSession(false);
-    if (session == null || session.getAttribute("user") == null) {
-        response.sendRedirect(request.getContextPath() + "/user/login");
-        return;
-    }
+        String action = request.getPathInfo();
 
-    String action = request.getPathInfo();
-
-    try {
-        switch (action) {
-            case "/insert":
+        try {
+            if ("/insert".equals(action)) {
                 insertTodo(request, response);
-                break;
-            case "/update":
+            } else if ("/update".equals(action)) {
                 updateTodo(request, response);
-                break;
-            default:
+            } else if ("/delete".equals(action)) {
+                deleteTodo(request, response);
+            } else {
                 listTodos(request, response);
-                break;
+            }
+        } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, "Database error", ex);
+            throw new ServletException("Database error", ex);
         }
-    } catch (SQLException ex) {
-        LOGGER.log(Level.SEVERE, "Database error", ex);
-        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database operation failed.");
     }
-}
 
-private void showNewForm(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException {
-    request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
-}
+    private void showNewForm(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
+    }
 
+    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
+        long id = Long.parseLong(request.getParameter("id"));
+        long userId = ((User) request.getSession().getAttribute("user")).getId();
+        Todo existingTodo = todoDAO.selectTodo(id, userId);
+        request.setAttribute("todo", existingTodo);
+        request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
+    }
 
-private void insertTodo(HttpServletRequest request, HttpServletResponse response)
+    private void listTodos(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
+        HttpSession session = request.getSession();
+        User currentUser = (User) session.getAttribute("user");
+        List<Todo> listTodo = todoDAO.selectAllTodos(currentUser.getId());
+        request.setAttribute("listTodo", listTodo);
+        request.getRequestDispatcher("/WEB-INF/views/todo-list.jsp").forward(request, response);
+    }
+
+    private void insertTodo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         String title = request.getParameter("title");
         String description = request.getParameter("description");
@@ -112,35 +119,14 @@ private void insertTodo(HttpServletRequest request, HttpServletResponse response
             LOGGER.log(Level.SEVERE, "Error parsing date", e);
         }
 
-        boolean isDone = "on".equals(request.getParameter("isDone"));
-        HttpSession session = request.getSession(); // Use existing session
-        User currentUser = (User) session.getAttribute("user");
-        long userId = currentUser.getId();
-
-        // Adjusted to use the constructor with userId for creating a new Todo object
-        Todo newTodo = new Todo(0, userId, title, description, targetDate, isDone); // Assuming ID is auto-generated and not needed here
-        todoDAO.insertTodo(newTodo); // Corrected to match the updated TodoDAO method signature
-        response.sendRedirect("list");
-    }
-    private void listTodos(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException, SQLException {
+        boolean isDone = request.getParameter("isDone") != null; // Correctly interpret the checkbox status
         HttpSession session = request.getSession();
         User currentUser = (User) session.getAttribute("user");
         long userId = currentUser.getId();
 
-        List<Todo> listTodo = todoDAO.selectAllTodos(userId); // Correct method call to TodoDAO
-        request.setAttribute("listTodo", listTodo);
-        request.getRequestDispatcher("/WEB-INF/views/todo-list.jsp").forward(request, response);
-    }
-
-    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException, SQLException {
-        long id = Long.parseLong(request.getParameter("id"));
-        long userId = ((User) request.getSession().getAttribute("user")).getId(); // Fetch userId from session
-
-        Todo existingTodo = todoDAO.selectTodo(id, userId); // Corrected to include userId
-        request.setAttribute("todo", existingTodo);
-        request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
+        Todo newTodo = new Todo(0, userId, title, description, targetDate, isDone);
+        todoDAO.insertTodo(newTodo);
+        response.sendRedirect(request.getContextPath() + "/todo/list");
     }
 
     private void updateTodo(HttpServletRequest request, HttpServletResponse response)
@@ -155,20 +141,25 @@ private void insertTodo(HttpServletRequest request, HttpServletResponse response
             LOGGER.log(Level.SEVERE, "Error parsing date", e);
         }
 
-        boolean isDone = "on".equals(request.getParameter("isDone"));
-        long userId = ((User) request.getSession().getAttribute("user")).getId(); // Fetch userId from session
+        boolean isDone = request.getParameter("isDone") != null; // Correctly interpret the checkbox status
+        HttpSession session = request.getSession();
+        User currentUser = (User) session.getAttribute("user");
+        long userId = currentUser.getId();
 
-        Todo todo = new Todo(id, userId, title, description, targetDate, isDone); // Correct constructor call
-        todoDAO.updateTodo(todo); // Correct method call to TodoDAO
-        response.sendRedirect("list");
+        Todo todo = new Todo(id, userId, title, description, targetDate, isDone);
+        todoDAO.updateTodo(todo);
+        response.sendRedirect(request.getContextPath() + "/todo/list");
     }
+
 
     private void deleteTodo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         long id = Long.parseLong(request.getParameter("id"));
-        long userId = ((User)request.getSession().getAttribute("user")).getId(); // Fetch userId from session
+        HttpSession session = request.getSession();
+        User currentUser = (User) session.getAttribute("user");
+        long userId = currentUser.getId();
 
-        todoDAO.deleteTodo(id, userId); // Correct method call to TodoDAO for user-specific deletion
-        response.sendRedirect("list");
+        todoDAO.deleteTodo(id, userId);
+        response.sendRedirect(request.getContextPath() + "/todo/list");
     }
 }

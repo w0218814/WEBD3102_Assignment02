@@ -8,7 +8,7 @@ public class Todo {
     private String title;
     private String description;
     private Date targetDate;
-    private boolean isDone;
+    public boolean isDone; // isDone is now public
 
     // Constructors
     public Todo() {}
@@ -33,7 +33,7 @@ public class Todo {
         this.userId = userId;
     }
 
-    // Getters and Setters
+    // Getters and Setters (excluding isDone since it's now public)
     public long getId() {
         return id;
     }
@@ -72,13 +72,5 @@ public class Todo {
 
     public void setTargetDate(Date targetDate) {
         this.targetDate = targetDate;
-    }
-
-    public boolean isDone() {
-        return isDone;
-    }
-
-    public void setDone(boolean done) {
-        isDone = done;
     }
 }
