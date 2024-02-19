@@ -51,7 +51,7 @@
             <td><%= todo.getTargetDate().toString() %></td>
             <td><%= todo.isDone ? "Done" : "Pending" %></td>
                         <td>
-                <a href="<%= request.getContextPath() %>/todo/edit?id=<%= todo.getId() %>" class="btn btn-primary">Edit</a>
+                            <a href="<%= request.getContextPath() %>/todo/edit?id=<%= todo.getId() %>&userId=<%= todo.getUserId() %>" class="btn btn-primary">Edit</a>
                 <form action="<%= request.getContextPath() %>/todo/delete" method="post" style="display: inline;">
                     <input type="hidden" name="id" value="<%= todo.getId() %>" />
                     <button type="submit" class="btn btn-danger">Delete</button>

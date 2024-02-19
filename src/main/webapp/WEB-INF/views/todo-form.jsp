@@ -15,7 +15,10 @@
 <div class="container">
     <h2 class="mt-5"><%= request.getAttribute("todo") != null ? "Edit Todo" : "Add Todo" %></h2>
     <form action="<%= request.getContextPath() %>/todo/<%= request.getAttribute("todo") != null ? "update" : "insert" %>" method="post">
-        <input type="hidden" name="id" value="<%= request.getAttribute("todo") != null ? ((Todo) request.getAttribute("todo")).getId() : "" %>"/>
+            <% if (request.getAttribute("todo") != null) { %>
+        <input type="hidden" name="id" value="<%= ((Todo) request.getAttribute("todo")).getId() %>"/>
+        <input type="hidden" name="userId" value="<%= ((Todo) request.getAttribute("todo")).getUserId() %>"/> <!-- Added hidden field for userId -->
+            <% } %>
         <div class="form-group">
             <label for="title">Title:</label>
             <input type="text" class="form-control" id="title" name="title" value="<%= request.getAttribute("todo") != null ? ((Todo) request.getAttribute("todo")).getTitle() : "" %>" required>

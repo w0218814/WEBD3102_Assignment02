@@ -103,11 +103,13 @@ public class TodoServlet extends HttpServlet {
     private void showEditForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         long id = Long.parseLong(request.getParameter("id"));
-        long userId = ((User) request.getSession().getAttribute("user")).getId();
-        Todo existingTodo = todoDAO.selectTodo(id, userId); // Ensure selectTodo method exists in TodoDAO
+        long userId = Long.parseLong(request.getParameter("userId")); // Retrieve userId from request
+        Todo existingTodo = todoDAO.selectTodo(id, userId);
         request.setAttribute("todo", existingTodo);
+        request.setAttribute("userId", userId); // Set userId in request for the form
         request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
     }
+
 
     // Lists all todos for the current user or for the user selected by admin
     private void listTodos(HttpServletRequest request, HttpServletResponse response)
@@ -164,6 +166,8 @@ public class TodoServlet extends HttpServlet {
     private void updateTodo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         long id = Long.parseLong(request.getParameter("id"));
+        // Fetch the userId from the form instead of the session
+        long userId = Long.parseLong(request.getParameter("userId"));
         String title = request.getParameter("title");
         String description = request.getParameter("description");
         Date targetDate = null;
@@ -171,25 +175,27 @@ public class TodoServlet extends HttpServlet {
             targetDate = new SimpleDateFormat("yyyy-MM-dd").parse(request.getParameter("targetDate"));
         } catch (ParseException e) {
             LOGGER.log(Level.SEVERE, "Error parsing date", e);
+            // Consider redirecting to an error page or showing an error message
         }
 
-        boolean isDone = request.getParameter("isDone") != null;
-        HttpSession session = request.getSession();
-        User currentUser = (User) session.getAttribute("user");
-        long userId = currentUser.getId();
+        // Check if the isDone checkbox was checked on the form
+        boolean isDone = "on".equals(request.getParameter("isDone"));
 
-        // Update the todo item in the database
+        // Create a new Todo object with the information from the form
         Todo todo = new Todo(id, userId, title, description, targetDate, isDone);
+
+        // Update the todo in the database
         boolean updated = todoDAO.updateTodo(todo);
         if (updated) {
-            response.sendRedirect(request.getContextPath() + "/todo/list");
+            // Redirect to the list of todos, potentially for the specific user you just edited
+            response.sendRedirect(request.getContextPath() + "/todo/list?userId=" + userId);
         } else {
-            // If update fails, you might want to forward to an error page or log the error
+            // If the update fails, log the error and potentially redirect to an error page
             LOGGER.log(Level.SEVERE, "Failed to update the todo item with id: " + id);
+            // You could pass the error as a query parameter or as a session attribute
             response.sendRedirect(request.getContextPath() + "/todo/edit?id=" + id + "&error=Update failed");
         }
     }
-
     // Processes the deletion of an existing todo item
     private void deleteTodo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
