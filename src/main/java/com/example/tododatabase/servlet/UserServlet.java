@@ -161,17 +161,30 @@ public class UserServlet extends HttpServlet {
     private void showRegistrationForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         HttpSession session = request.getSession(false);
-        if (session != null && "admin".equalsIgnoreCase(((User) session.getAttribute("user")).getRoleName())) {
+        User currentUser = null;
+        if (session != null) {
+            currentUser = (User) session.getAttribute("user");
+        }
+
+        // Check if currentUser is null or does not have a role, treat as a regular user
+        if (currentUser == null || currentUser.getRoleName() == null || currentUser.getRoleName().isEmpty()) {
+            request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
+        } else if ("admin".equalsIgnoreCase(currentUser.getRoleName())) {
+            // Existing admin logic here
             try {
                 List<User> users = userDAO.selectAllUsers();
                 request.setAttribute("allUsers", users); // Forward all users to the JSP for admin
+                request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
             } catch (Exception ex) {
                 handleError(request, response, "Database error", "Error fetching users: " + ex.getMessage());
-                return;
             }
+        } else {
+            // If not admin but has a role, redirect or show a different page
+            response.sendRedirect(request.getContextPath() + "/user/profile");
         }
-        request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
     }
+
+
 
     private void editUser(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

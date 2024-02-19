@@ -15,8 +15,14 @@
 <div class="container">
     <h2 class="mt-5"><%= request.getAttribute("user") != null ? "Edit User" : "User Registration" %></h2>
 
-    <% User currentUser = (User) request.getSession().getAttribute("user");
-        if ("admin".equalsIgnoreCase(currentUser.getRoleName())) {
+    <%
+        User currentUser = null;
+        if (request.getSession(false) != null) {
+            currentUser = (User) request.getSession().getAttribute("user");
+        }
+        boolean isAdmin = currentUser != null && "admin".equalsIgnoreCase(currentUser.getRoleName());
+
+        if (isAdmin) {
             List<User> users = (List<User>) request.getAttribute("allUsers");
     %>
     <form action="<%= request.getContextPath() %>/user/editUser" method="get">
@@ -55,7 +61,7 @@
             <label for="email">Email:</label>
             <input type="email" class="form-control" id="email" name="email" value="<%= request.getAttribute("user") != null ? ((User) request.getAttribute("user")).getEmail() : "" %>" required>
         </div>
-        <% if ("admin".equalsIgnoreCase(currentUser.getRoleName())) { %>
+        <% if (isAdmin) { %>
         <div class="form-group">
             <label for="role">Role:</label>
             <select class="form-control" id="role" name="role">
@@ -63,6 +69,8 @@
                 <option value="admin" <%= request.getAttribute("user") != null && "admin".equals(((User) request.getAttribute("user")).getRoleName()) ? "selected" : "" %>>Admin</option>
             </select>
         </div>
+        <% } else { %>
+        <input type="hidden" name="role" value="user">
         <% } %>
         <button type="submit" class="btn btn-primary"><%= request.getAttribute("user") != null ? "Update User" : "Register User" %></button>
     </form>
