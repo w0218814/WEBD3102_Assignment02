@@ -1,6 +1,7 @@
 package com.example.tododatabase.servlet;
 
 import com.example.tododatabase.dao.TodoDAO;
+import com.example.tododatabase.dao.UserDAO; // Make sure this import is correct
 import com.example.tododatabase.model.Todo;
 import com.example.tododatabase.model.User;
 import jakarta.servlet.ServletException;
@@ -18,16 +19,22 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+// This is the servlet definition and mapping for all /todo/* URLs
 @WebServlet(name = "TodoServlet", urlPatterns = {"/todo/*"})
 public class TodoServlet extends HttpServlet {
+    // DAOs are initialized in the init() method below
     private TodoDAO todoDAO;
+    private UserDAO userDAO; // Added UserDAO for admin user management functionality
     private final static Logger LOGGER = Logger.getLogger(TodoServlet.class.getName());
 
+    // This method initializes the DAOs needed for this servlet
     @Override
     public void init() {
         this.todoDAO = new TodoDAO();
+        this.userDAO = new UserDAO(); // Initialize UserDAO
     }
 
+    // doGet handles GET requests to the /todo/* URL patterns
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -58,6 +65,7 @@ public class TodoServlet extends HttpServlet {
         }
     }
 
+    // doPost handles POST requests to the /todo/* URL patterns
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -85,31 +93,53 @@ public class TodoServlet extends HttpServlet {
         }
     }
 
+    // Shows the form to add a new todo item
     private void showNewForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
     }
 
+    // Shows the form to edit an existing todo item
     private void showEditForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         long id = Long.parseLong(request.getParameter("id"));
         long userId = ((User) request.getSession().getAttribute("user")).getId();
-        Todo existingTodo = todoDAO.selectTodo(id, userId);
+        Todo existingTodo = todoDAO.selectTodo(id, userId); // Ensure selectTodo method exists in TodoDAO
         request.setAttribute("todo", existingTodo);
         request.getRequestDispatcher("/WEB-INF/views/todo-form.jsp").forward(request, response);
     }
 
+    // Lists all todos for the current user or for the user selected by admin
     private void listTodos(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         HttpSession session = request.getSession();
         User currentUser = (User) session.getAttribute("user");
-        List<Todo> listTodo = todoDAO.selectAllTodos(currentUser.getId());
+        Long userId = currentUser.getId(); // Default to the current user
+
+        // Check if the user is admin and a userId parameter is provided
+        if ("admin".equalsIgnoreCase(currentUser.getRoleName())) {
+            if (request.getParameter("userId") != null) {
+                try {
+                    userId = Long.parseLong(request.getParameter("userId"));
+                } catch (NumberFormatException e) {
+                    LOGGER.log(Level.WARNING, "Invalid user ID provided by admin", e);
+                    // Optionally redirect to an error page or set an error message
+                }
+            }
+            // Modification: Fetch all users for admin
+            List<User> allUsers = userDAO.selectAllUsers(); // Fetch all users for admin
+            request.setAttribute("allUsers", allUsers);
+            ; // Set list of users for admin
+        }
+        List<Todo> listTodo = todoDAO.selectAllTodos(userId); // Ensure selectAllTodos method exists in TodoDAO
         request.setAttribute("listTodo", listTodo);
         request.getRequestDispatcher("/WEB-INF/views/todo-list.jsp").forward(request, response);
     }
 
+    // Processes the insertion of a new todo item
     private void insertTodo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
+        // Extract todo details from request parameters
         String title = request.getParameter("title");
         String description = request.getParameter("description");
         Date targetDate = null;
@@ -119,16 +149,18 @@ public class TodoServlet extends HttpServlet {
             LOGGER.log(Level.SEVERE, "Error parsing date", e);
         }
 
-        boolean isDone = request.getParameter("isDone") != null; // Correctly interpret the checkbox status
+        boolean isDone = request.getParameter("isDone") != null;
         HttpSession session = request.getSession();
         User currentUser = (User) session.getAttribute("user");
         long userId = currentUser.getId();
 
+        // Create a new Todo object and insert it into the database
         Todo newTodo = new Todo(0, userId, title, description, targetDate, isDone);
         todoDAO.insertTodo(newTodo);
         response.sendRedirect(request.getContextPath() + "/todo/list");
     }
 
+    // Processes the update of an existing todo item
     private void updateTodo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         long id = Long.parseLong(request.getParameter("id"));
@@ -141,17 +173,24 @@ public class TodoServlet extends HttpServlet {
             LOGGER.log(Level.SEVERE, "Error parsing date", e);
         }
 
-        boolean isDone = request.getParameter("isDone") != null; // Correctly interpret the checkbox status
+        boolean isDone = request.getParameter("isDone") != null;
         HttpSession session = request.getSession();
         User currentUser = (User) session.getAttribute("user");
         long userId = currentUser.getId();
 
+        // Update the todo item in the database
         Todo todo = new Todo(id, userId, title, description, targetDate, isDone);
-        todoDAO.updateTodo(todo);
-        response.sendRedirect(request.getContextPath() + "/todo/list");
+        boolean updated = todoDAO.updateTodo(todo);
+        if (updated) {
+            response.sendRedirect(request.getContextPath() + "/todo/list");
+        } else {
+            // If update fails, you might want to forward to an error page or log the error
+            LOGGER.log(Level.SEVERE, "Failed to update the todo item with id: " + id);
+            response.sendRedirect(request.getContextPath() + "/todo/edit?id=" + id + "&error=Update failed");
+        }
     }
 
-
+    // Processes the deletion of an existing todo item
     private void deleteTodo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         long id = Long.parseLong(request.getParameter("id"));
@@ -159,7 +198,17 @@ public class TodoServlet extends HttpServlet {
         User currentUser = (User) session.getAttribute("user");
         long userId = currentUser.getId();
 
-        todoDAO.deleteTodo(id, userId);
-        response.sendRedirect(request.getContextPath() + "/todo/list");
+        boolean deleted = todoDAO.deleteTodo(id, userId);
+        if (deleted) {
+            response.sendRedirect(request.getContextPath() + "/todo/list");
+        } else {
+            // If deletion fails, you might want to forward to an error page or log the error
+            LOGGER.log(Level.SEVERE, "Failed to delete the todo item with id: " + id);
+            response.sendRedirect(request.getContextPath() + "/todo/list?error=Delete failed");
+        }
     }
-}
+
+
+} // End of the TodoServlet class
+
+

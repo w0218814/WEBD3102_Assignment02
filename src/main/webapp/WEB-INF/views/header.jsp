@@ -26,7 +26,7 @@
 </style>
 <div class="user-info-header">
     <p>Welcome, <%= loggedInUser.getFullName() %></p> <!-- Using getFullName() based on your assumption -->
-    <a href="<%= request.getContextPath() %>/logout" class="btn btn-warning">Logout</a>
+    <a href="<%= request.getContextPath() %>/user/logout" class="btn btn-warning">Logout</a>
 </div>
 <%
     } else {

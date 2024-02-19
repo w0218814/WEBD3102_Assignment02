@@ -14,11 +14,11 @@
     <h1 class="mt-5">Admin Console</h1>
     <p>Welcome to the Admin Console! Here, you can manage users, roles, and other administrative tasks.</p>
 
-    <!-- Placeholder links for admin tasks -->
+    <!-- Updated links for admin tasks -->
     <div class="list-group">
-        <a href="#" class="list-group-item list-group-item-action">Manage Users</a>
-        <a href="#" class="list-group-item list-group-item-action">View System Logs</a>
-        <a href="#" class="list-group-item list-group-item-action">Configure Settings</a>
+        <a href="#" class="list-group-item list-group-item-action">Manage Existing Users</a>
+        <a href="#" class="list-group-item list-group-item-action">Create New User</a>
+        <a href="<%= request.getContextPath() %>/todo/list" class="list-group-item list-group-item-action">Manage Todo Lists</a>
     </div>
 </div>
 
