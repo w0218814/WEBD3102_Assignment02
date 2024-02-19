@@ -10,7 +10,13 @@
 
 <div class="container">
     <h2 class="mt-5">Login</h2>
-    <!-- Corrected action path to target the LoginServlet -->
+    <!-- Display error message if it exists -->
+    <% String errorMessage = request.getParameter("error");
+        if (errorMessage != null && !errorMessage.isEmpty()) { %>
+    <div class="alert alert-danger" role="alert">
+        <%= errorMessage %>
+    </div>
+    <% } %>
     <form action="<%=request.getContextPath()%>/login" method="post">
         <div class="form-group">
             <label for="username">Username:</label>
@@ -29,4 +35,3 @@
 
 </body>
 </html>
-//
