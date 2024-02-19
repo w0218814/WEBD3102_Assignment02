@@ -16,8 +16,7 @@
 
     <!-- Updated links for admin tasks -->
     <div class="list-group">
-        <a href="#" class="list-group-item list-group-item-action">Manage Existing Users</a>
-        <a href="#" class="list-group-item list-group-item-action">Create New User</a>
+        <a href="<%= request.getContextPath() %>/user/register" class="list-group-item list-group-item-action">Manage Users</a>
         <a href="<%= request.getContextPath() %>/todo/list" class="list-group-item list-group-item-action">Manage Todo Lists</a>
     </div>
 </div>

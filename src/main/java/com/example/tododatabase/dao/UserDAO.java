@@ -33,19 +33,44 @@ public class UserDAO {
             }
         }
     }
-    public void insertUser(User user, String hashedPassword) throws SQLException {
+
+    public User selectUserById(long id) throws SQLException {
+        User user = null;
+        try (Connection connection = MySQLConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_USER_BY_ID)) {
+            preparedStatement.setLong(1, id);
+            ResultSet rs = preparedStatement.executeQuery();
+
+            if (rs.next()) {
+                user = new User(
+                        rs.getLong("id"),
+                        rs.getString("username"),
+                        rs.getString("fullName"),
+                        rs.getString("email"),
+                        rs.getString("roleName"));
+            }
+        } catch (SQLException e) {
+            printSQLException(e);
+            throw e;
+        }
+        return user;
+    }
+
+    public void insertUser(User user, String hashedPassword, int roleId) throws SQLException {
         try (Connection connection = MySQLConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_USERS_SQL)) {
             preparedStatement.setString(1, user.getUsername());
             preparedStatement.setString(2, hashedPassword);
             preparedStatement.setString(3, user.getFullName());
             preparedStatement.setString(4, user.getEmail());
-            preparedStatement.setInt(5, 2); // Assuming '2' is the role ID for 'user'
+            preparedStatement.setInt(5, roleId); // Dynamic role ID based on the parameter
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             printSQLException(e);
+            throw e; // Rethrow the exception to be handled further up the call stack
         }
     }
+
 
     public boolean updateUser(User user) throws SQLException {
         boolean rowUpdated;
