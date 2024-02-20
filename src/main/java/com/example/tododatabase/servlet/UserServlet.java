@@ -31,52 +31,59 @@ public class UserServlet extends HttpServlet {
             switch (action) {
                 case "/register":
                     registerUser(request, response);
-                    break;
+                    return;
                 case "/update":
                     updateUserProfile(request, response);
-                    break;
+                    return;
                 case "/changePassword":
                     changeUserPassword(request, response);
-                    break;
+                    return;
                 default:
                     redirectToLogin(request, response);
-                    break;
+                    return;
             }
         } catch (SQLException ex) {
             handleError(request, response, "Database error", ex.getMessage());
         }
     }
 
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getPathInfo();
 
+        // Handle the register action directly
+        if ("/register".equals(action)) {
+            showRegistrationForm(request, response);
+            return;
+        }
+
+        // Session validation for other actions
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            redirectToLogin(request, response);
+            return;
+        }
+
+        // Handling other actions with session present
         try {
-            switch (action) {
-                case "/logout":
-                    logoutUser(request, response);
-                    break;
-                case "/register":
-                    showRegistrationForm(request, response);
-                    break;
-                case "/editUser":
-                    editUser(request, response);
-                    break;
-                case "/profile":
-                    showProfile(request, response);
-                    break;
-                case "/adminConsole":
-                    showAdminDashboard(request, response);
-                    break;
-                default:
-                    redirectToLogin(request, response);
-                    break;
+            if ("/logout".equals(action)) {
+                logoutUser(request, response);
+            } else if ("/editUser".equals(action)) {
+                editUser(request, response);
+            } else if ("/profile".equals(action)) {
+                showProfile(request, response);
+            } else if ("/adminConsole".equals(action)) {
+                showAdminDashboard(request, response);
+            } else {
+                response.sendRedirect(request.getContextPath() + "/"); // Redirect to a default or home page
             }
         } catch (Exception ex) {
             handleError(request, response, "Error processing request", ex.getMessage());
         }
     }
+
 
     private void registerUser(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -154,35 +161,35 @@ public class UserServlet extends HttpServlet {
     }
 
     private void redirectToLogin(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
+            throws IOException {
+        response.sendRedirect(request.getContextPath() + "/login");
     }
+
 
     private void showRegistrationForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         HttpSession session = request.getSession(false);
-        User currentUser = null;
-        if (session != null) {
-            currentUser = (User) session.getAttribute("user");
-        }
+        User currentUser = (session != null) ? (User) session.getAttribute("user") : null;
 
-        // Check if currentUser is null or does not have a role, treat as a regular user
-        if (currentUser == null || currentUser.getRoleName() == null || currentUser.getRoleName().isEmpty()) {
-            request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
-        } else if ("admin".equalsIgnoreCase(currentUser.getRoleName())) {
-            // Existing admin logic here
+        // Default to treating as a regular user unless specified otherwise.
+        String roleName = (currentUser != null && currentUser.getRoleName() != null) ? currentUser.getRoleName() : "user";
+        request.setAttribute("roleName", roleName);
+
+        if ("admin".equalsIgnoreCase(roleName)) {
+            // Admin specific logic
             try {
                 List<User> users = userDAO.selectAllUsers();
                 request.setAttribute("allUsers", users); // Forward all users to the JSP for admin
-                request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
             } catch (Exception ex) {
                 handleError(request, response, "Database error", "Error fetching users: " + ex.getMessage());
+                return; // Stop further execution in case of error
             }
-        } else {
-            // If not admin but has a role, redirect or show a different page
-            response.sendRedirect(request.getContextPath() + "/user/profile");
         }
+
+        request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
+        return; // Ensure no further processing after forwarding
     }
+
 
 
 

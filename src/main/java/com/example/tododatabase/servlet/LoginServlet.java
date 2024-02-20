@@ -23,11 +23,19 @@ public class LoginServlet extends HttpServlet {
         userDAO = new UserDAO();
     }
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/login.jsp");
-        dispatcher.forward(request, response);
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        System.out.println("LoginServlet doGet called with URI: " + request.getRequestURI());
+
+        // Serve only the login page or directly allow /user/register access
+        if (request.getRequestURI().endsWith("/user/register")) {
+            response.sendRedirect(request.getContextPath() + "/user/register");
+        } else {
+            RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/login.jsp");
+            dispatcher.forward(request, response);
+        }
     }
+
+
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)

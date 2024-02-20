@@ -29,9 +29,5 @@
     <a href="<%= request.getContextPath() %>/user/logout" class="btn btn-warning">Logout</a>
 </div>
 <%
-    } else {
-        // If the user is not logged in, redirect to the login page
-        response.sendRedirect(request.getContextPath() + "/login");
-        return;
     }
 %>

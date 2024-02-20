@@ -16,12 +16,8 @@
     <h2 class="mt-5"><%= request.getAttribute("user") != null ? "Edit User" : "User Registration" %></h2>
 
     <%
-        User currentUser = null;
-        if (request.getSession(false) != null) {
-            currentUser = (User) request.getSession().getAttribute("user");
-        }
+        User currentUser = (User) request.getSession(false).getAttribute("user");
         boolean isAdmin = currentUser != null && "admin".equalsIgnoreCase(currentUser.getRoleName());
-
         if (isAdmin) {
             List<User> users = (List<User>) request.getAttribute("allUsers");
     %>
