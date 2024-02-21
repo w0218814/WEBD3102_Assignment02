@@ -11,7 +11,7 @@
 
 <div class="container">
     <h2 class="mt-5">User Profile</h2>
-    <form action="${pageContext.request.contextPath}/user/update" method="post">
+    <form action="${pageContext.request.contextPath}/user/adminConsole" method="post">
         <input type="hidden" name="id" value="${user.id}"/>
         <div class="form-group">
             <label for="username">Username:</label>
