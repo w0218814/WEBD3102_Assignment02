@@ -72,14 +72,17 @@ public class UserDAO {
     }
 
 
-    public boolean updateUser(User user) throws SQLException {
+    public boolean updateUser(User user, int roleId) throws SQLException {
         boolean rowUpdated;
+        // Assuming you add a roleId parameter to the SQL query for updating the user's role
+        String UPDATE_USERS_WITH_ROLE_SQL = "UPDATE users SET username = ?, fullName = ?, email = ?, roleId = ? WHERE id = ?";
         try (Connection connection = MySQLConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE_USERS_SQL)) {
+             PreparedStatement statement = connection.prepareStatement(UPDATE_USERS_WITH_ROLE_SQL)) {
             statement.setString(1, user.getUsername());
             statement.setString(2, user.getFullName());
             statement.setString(3, user.getEmail());
-            statement.setLong(4, user.getId());
+            statement.setInt(4, roleId); // Update the role ID as well
+            statement.setLong(5, user.getId());
 
             rowUpdated = statement.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -88,6 +91,7 @@ public class UserDAO {
         }
         return rowUpdated;
     }
+
 
     public boolean deleteUser(long id) throws SQLException {
         boolean rowDeleted;
