@@ -18,6 +18,14 @@
         <servlet-name>UserServlet</servlet-name>
         <url-pattern>/user/*</url-pattern>
     </servlet-mapping>
+    <servlet>
+        <servlet-name>AdminServlet</servlet-name>
+        <servlet-class>com.example.tododatabase.servlet.AdminServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminServlet</servlet-name>
+        <url-pattern>/admin/*</url-pattern>
+    </servlet-mapping>
 
     <servlet>
         <servlet-name>TodoServlet</servlet-name>

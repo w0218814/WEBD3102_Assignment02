@@ -27,7 +27,7 @@
 
     <!-- Links for admin tasks -->
     <div class="list-group">
-        <a href="<%= request.getContextPath() %>/user/adminRegister" class="list-group-item list-group-item-action">Manage Users</a>
+        <a href="<%= request.getContextPath() %>/admin/register" class="list-group-item list-group-item-action">Manage Users</a>
         <a href="<%= request.getContextPath() %>/todo/list" class="list-group-item list-group-item-action">Manage Todo Lists</a>
     </div>
 </div>
