@@ -45,6 +45,9 @@ public class UserServlet extends HttpServlet {
         String action = request.getPathInfo();
         try {
             switch (action) {
+                case "/register":
+                    showRegisterPage(request, response);
+                    break;
                 case "/logout":
                     logoutUser(request, response);
                     break;
@@ -58,8 +61,15 @@ public class UserServlet extends HttpServlet {
         }
     }
 
+
+    private void showRegisterPage(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        // Forward to the register.jsp page located in WEB-INF/views directory
+        request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
+    }
+
     private void registerUser(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException {
+            throws SQLException, IOException, ServletException {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String fullName = request.getParameter("fullName");
@@ -70,8 +80,11 @@ public class UserServlet extends HttpServlet {
         User newUser = new User(username, fullName, email);
         userDAO.insertUser(newUser, hashedPassword, roleId);
 
-        response.sendRedirect("login"); // Redirect to login page after successful registration
+        // Forward the request to register.jsp page after successful registration
+        response.sendRedirect(request.getContextPath() + "/user/login"); // Redirect to login page after successful registration
+
     }
+
 
     private void authenticateUser(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
