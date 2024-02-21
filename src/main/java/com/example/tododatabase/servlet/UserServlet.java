@@ -19,21 +19,24 @@ public class UserServlet extends HttpServlet {
     private UserDAO userDAO;
 
     public void init() {
+        // Initialize the UserDAO when the servlet starts
         userDAO = new UserDAO();
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // Handle POST requests
         String action = request.getPathInfo();
         try {
             switch (action) {
                 case "/register":
+                    // Handle user registration
                     registerUser(request, response);
                     break;
                 case "/login":
+                    // Handle user login
                     authenticateUser(request, response);
                     break;
-                // Additional case statements for other POST requests like updating or deleting a user
             }
         } catch (SQLException ex) {
             throw new ServletException(ex);
@@ -42,61 +45,69 @@ public class UserServlet extends HttpServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // Handle GET requests
         String action = request.getPathInfo();
         try {
             switch (action) {
                 case "/register":
+                    // Show registration page
                     showRegisterPage(request, response);
                     break;
                 case "/logout":
+                    // Handle user logout
                     logoutUser(request, response);
                     break;
-                case "/login": // Handle direct access to login page
+                case "/login":
+                    // Show login page
                     showLoginPage(request, response);
                     break;
-                // Additional case statements for other GET requests like showing a user profile
             }
         } catch (Exception ex) {
             throw new ServletException(ex);
         }
     }
 
-
     private void showRegisterPage(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Forward to the register.jsp page located in WEB-INF/views directory
+        // Forward the request to the register.jsp page located in WEB-INF/views directory
         request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
     }
 
     private void registerUser(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
+        // Extract registration information from request parameters
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String fullName = request.getParameter("fullName");
         String email = request.getParameter("email");
         int roleId = Integer.parseInt(request.getParameter("role"));
+        // Hash the password before storing it
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
+        // Create a new User object with registration information
         User newUser = new User(username, fullName, email);
+        // Insert the user into the database
         userDAO.insertUser(newUser, hashedPassword, roleId);
 
-        // Forward the request to register.jsp page after successful registration
-        response.sendRedirect(request.getContextPath() + "/user/login"); // Redirect to login page after successful registration
-
+        // Redirect to the login page after successful registration
+        response.sendRedirect(request.getContextPath() + "/user/login");
     }
-
 
     private void authenticateUser(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
+        // Extract login information from request parameters
         String username = request.getParameter("username");
         String password = request.getParameter("password");
 
+        // Check if the provided credentials are valid
         User user = userDAO.checkLogin(username, password);
         if (user != null) {
+            // If valid, create a session and redirect to the todo list page
             HttpSession session = request.getSession();
             session.setAttribute("user", user); // Set user in session
-            response.sendRedirect(request.getContextPath() + "/todo/list"); // Redirect to todo list
+            response.sendRedirect(request.getContextPath() + "/todo/list");
         } else {
+            // If invalid, set an error message and forward back to the login page
             request.setAttribute("message", "Invalid username or password");
             request.getRequestDispatcher("/user/login").forward(request, response);
         }
@@ -104,16 +115,18 @@ public class UserServlet extends HttpServlet {
 
     private void logoutUser(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
+        // Invalidate the session and redirect to the login page
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.removeAttribute("user"); // Remove user from session
             session.invalidate(); // Invalidate session
-            response.sendRedirect(request.getContextPath() + "/user/login"); // Redirect to login page
         }
+        response.sendRedirect(request.getContextPath() + "/user/login");
     }
+
     private void showLoginPage(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Forward to the login page located in WEB-INF/views directory
+        // Forward the request to the login.jsp page located in WEB-INF/views directory
         request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
     }
 }

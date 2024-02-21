@@ -6,16 +6,16 @@ import java.util.Objects;
 public class User implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private long id;
-    private String username;
-    private String fullName;
-    private String email;
-    private String roleName; // Field for role name
+    private long id; // Unique identifier for the User
+    private String username; // Username of the User
+    private String fullName; // Full name of the User
+    private String email; // Email address of the User
+    private String roleName; // Role name of the User
 
     // Default constructor
     public User() {}
 
-    // Constructor without ID - for new user registration and fetched user details without needing a password
+    // Constructor without ID - for new user registration and fetching user details without needing a password
     public User(String username, String fullName, String email) {
         this.username = username;
         this.fullName = fullName;
@@ -24,10 +24,10 @@ public class User implements Serializable {
 
     // Constructor with ID - for fetching from the database without password
     public User(long id, String username, String fullName, String email) {
-        this(id, username, fullName, email, null); // roleName is null when not specified
+        this(id, username, fullName, email, null); // Role name is null when not specified
     }
 
-    // Full constructor including roleName - for complete user details without password
+    // Full constructor including roleName - for complete user details including role without password
     public User(long id, String username, String fullName, String email, String roleName) {
         this.id = id;
         this.username = username;
@@ -78,7 +78,7 @@ public class User implements Serializable {
         this.roleName = roleName;
     }
 
-    // toString method
+    // toString method for printing User details
     @Override
     public String toString() {
         return "User{" +
@@ -90,7 +90,7 @@ public class User implements Serializable {
                 '}';
     }
 
-    // equals and hashCode methods
+    // equals and hashCode methods for comparing User objects
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

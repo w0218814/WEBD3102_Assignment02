@@ -1,12 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ include file="header.jsp" %>
+<%@ include file="header.jsp" %> <!-- Including header.jsp file -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Admin Console</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"> <!-- Bootstrap CSS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> <!-- Bootstrap JS -->
 </head>
 <body>
 
@@ -28,8 +29,8 @@
 
     <!-- Links for admin tasks -->
     <div class="list-group">
-        <a href="<%= request.getContextPath() %>/admin/register" class="list-group-item list-group-item-action">Manage Users</a>
-        <a href="<%= request.getContextPath() %>/todo/list" class="list-group-item list-group-item-action">Manage Todo Lists</a>
+        <a href="<%= request.getContextPath() %>/admin/register" class="list-group-item list-group-item-action">Manage Users</a> <!-- Link to manage users -->
+        <a href="<%= request.getContextPath() %>/todo/list" class="list-group-item list-group-item-action">Manage Todo Lists</a> <!-- Link to manage todo lists -->
     </div>
 </div>
 

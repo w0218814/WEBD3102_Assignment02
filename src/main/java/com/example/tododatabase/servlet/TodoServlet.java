@@ -1,7 +1,7 @@
 package com.example.tododatabase.servlet;
 
 import com.example.tododatabase.dao.TodoDAO;
-import com.example.tododatabase.dao.UserDAO; // Make sure this import is correct
+import com.example.tododatabase.dao.UserDAO;
 import com.example.tododatabase.model.Todo;
 import com.example.tododatabase.model.User;
 import jakarta.servlet.ServletException;
@@ -208,13 +208,8 @@ public class TodoServlet extends HttpServlet {
         if (deleted) {
             response.sendRedirect(request.getContextPath() + "/todo/list");
         } else {
-            // If deletion fails, you might want to forward to an error page or log the error
             LOGGER.log(Level.SEVERE, "Failed to delete the todo item with id: " + id);
             response.sendRedirect(request.getContextPath() + "/todo/list?error=Delete failed");
         }
     }
-
-
-} // End of the TodoServlet class
-
-
+}

@@ -1,14 +1,14 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.util.List"%>
-<%@ page import="com.example.tododatabase.model.User"%>
+<%@ page import="java.util.List"%> <!-- Importing List class -->
+<%@ page import="com.example.tododatabase.model.User"%> <!-- Importing User class -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title><%= request.getAttribute("user") != null ? "Edit User" : "User Registration" %></title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"> <!-- Bootstrap CSS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> <!-- Bootstrap JS -->
 </head>
 <body>
 <div class="container">
@@ -65,6 +65,7 @@
                 <option value="user" <%= "user".equals(roleNameValue) ? "selected" : "" %>>User</option>
             </select>
         </div>
+        <button onclick="goBack()" class="btn btn-secondary">Back</button>
         <button type="submit" class="btn btn-primary"><%= editingUser != null ? "Update User" : "Register User" %></button>
     </form>
 </div>
@@ -77,6 +78,10 @@
             window.location.href = '<%= request.getContextPath() %>/admin/editUser?userId=' + userId;
         }
     });
+    // Function to go back to the previous page in the browser's history
+    function goBack() {
+        window.history.back();
+    }
 </script>
 </body>
 </html>

@@ -3,16 +3,19 @@ package com.example.tododatabase.model;
 import java.util.Date;
 
 public class Todo {
-    private long id;
-    private long userId;
-    private String title;
-    private String description;
-    private Date targetDate;
-    public boolean isDone; // isDone is now public
+    private long id; // Unique identifier for the Todo
+    private long userId; // Identifier for the user associated with the Todo
+    private String title; // Title of the Todo
+    private String description; // Description of the Todo
+    private Date targetDate; // Date by which the Todo should be completed
+    public boolean isDone; // Indicates whether the Todo is done or not, now public
 
     // Constructors
+
+    // Default constructor
     public Todo() {}
 
+    // Constructor with parameters
     public Todo(String title, String description, Date targetDate, boolean isDone) {
         this.title = title;
         this.description = description;
@@ -20,6 +23,7 @@ public class Todo {
         this.isDone = isDone;
     }
 
+    // Constructor with parameters including ID
     public Todo(long id, String title, String description, Date targetDate, boolean isDone) {
         this.id = id;
         this.title = title;
@@ -28,7 +32,9 @@ public class Todo {
         this.isDone = isDone;
     }
 
+    // Constructor with parameters including ID and user ID
     public Todo(long id, long userId, String title, String description, Date targetDate, boolean isDone) {
+        // Reusing constructor with parameters including ID
         this(id, title, description, targetDate, isDone);
         this.userId = userId;
     }

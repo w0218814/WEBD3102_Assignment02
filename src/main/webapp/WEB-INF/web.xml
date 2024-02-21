@@ -4,20 +4,24 @@
          https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
          version="5.0">
 
+    <!-- Resource Reference: Defines a reference to a JDBC DataSource -->
     <resource-ref>
-        <res-ref-name>jdbc/myDataSource</res-ref-name>
-        <res-type>javax.sql.DataSource</res-type>
-        <res-auth>Container</res-auth>
+        <res-ref-name>jdbc/myDataSource</res-ref-name> <!-- Name of the JDBC resource reference -->
+        <res-type>javax.sql.DataSource</res-type> <!-- Type of the resource (javax.sql.DataSource) -->
+        <res-auth>Container</res-auth> <!-- Authentication type (Container-managed) -->
     </resource-ref>
 
+    <!-- Servlet Configuration: Defines servlets and their mappings -->
     <servlet>
-        <servlet-name>UserServlet</servlet-name>
-        <servlet-class>com.example.tododatabase.servlet.UserServlet</servlet-class>
+        <servlet-name>UserServlet</servlet-name> <!-- Name of the servlet -->
+        <servlet-class>com.example.tododatabase.servlet.UserServlet</servlet-class> <!-- Servlet class -->
     </servlet>
     <servlet-mapping>
-        <servlet-name>UserServlet</servlet-name>
-        <url-pattern>/user/*</url-pattern>
+        <servlet-name>UserServlet</servlet-name> <!-- Name of the servlet to map -->
+        <url-pattern>/user/*</url-pattern> <!-- URL pattern to map to the servlet -->
     </servlet-mapping>
+
+    <!-- Similar configuration for AdminServlet -->
     <servlet>
         <servlet-name>AdminServlet</servlet-name>
         <servlet-class>com.example.tododatabase.servlet.AdminServlet</servlet-class>
@@ -27,6 +31,7 @@
         <url-pattern>/admin/*</url-pattern>
     </servlet-mapping>
 
+    <!-- Similar configuration for TodoServlet -->
     <servlet>
         <servlet-name>TodoServlet</servlet-name>
         <servlet-class>com.example.tododatabase.servlet.TodoServlet</servlet-class>
@@ -36,12 +41,14 @@
         <url-pattern>/todo/*</url-pattern>
     </servlet-mapping>
 
+    <!-- Welcome File List: Specifies the default file to be loaded -->
     <welcome-file-list>
-        <welcome-file>index.jsp</welcome-file>
+        <welcome-file>index.jsp</welcome-file> <!-- Default file to be loaded -->
     </welcome-file-list>
 
+    <!-- Session Configuration: Specifies session-related settings -->
     <session-config>
-        <session-timeout>30</session-timeout>
+        <session-timeout>30</session-timeout> <!-- Session timeout in minutes -->
     </session-config>
 
     <!-- Other configurations can be added here -->
