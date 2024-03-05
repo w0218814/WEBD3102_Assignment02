@@ -1,54 +1,39 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.List" %>
-<%@ page import="your.package.Order" %> <!-- Replace 'your.package' with the actual package where your Order class is located -->
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<html>
+<%@ page import="com.example.orderdatabase.model.Order" %>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Order List</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        .order-list {
-            list-style-type: none;
-            padding: 0;
-        }
-        .order-list li {
-            margin-bottom: 10px;
-            padding: 10px;
-            background-color: #f0f0f0;
-            border: 1px solid #ddd;
-        }
-        .order-list li a {
-            text-decoration: none;
-            color: #333;
-        }
-        .order-status {
-            font-weight: bold;
-        }
-    </style>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
-<h2>Your Orders</h2>
-<ul class="order-list">
-    <%
-        // Retrieve the list of orders from the request attribute
-        List<Order> orderList = (List<Order>) request.getAttribute("orderList");
-        if (orderList != null && !orderList.isEmpty()) {
-            for (Order order : orderList) {
-    %>
-    <li>
-        <a href="orderDetails?id=<%=order.getId()%>">Order #<%=order.getId()%></a> -
-        Status: <span class="order-status"><%=order.getStatus()%></span>
-        <!-- Add more details as needed, e.g., order date, total price -->
-    </li>
-    <%
-        }
-    } else {
-    %>
-    <p>No orders found.</p>
-    <%
-        }
-    %>
-</ul>
+
+<div class="container mt-5">
+    <h2>Your Orders</h2>
+    <ul class="list-group mt-3">
+        <%
+            List<Order> orderList = (List<Order>) request.getAttribute("orderList");
+            if (orderList != null && !orderList.isEmpty()) {
+                for (Order order : orderList) {
+        %>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            Order #<%= order.getOrderId() %>
+            <span class="badge badge-primary badge-pill"><%= order.getStatus() %></span>
+            <!-- Implement additional order details display -->
+        </li>
+        <%
+            }
+        } else {
+        %>
+        <li class="list-group-item">No orders found.</li>
+        <%
+            }
+        %>
+    </ul>
+</div>
+
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

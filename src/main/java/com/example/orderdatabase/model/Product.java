@@ -5,8 +5,11 @@ import java.util.Date;
 import java.util.Objects;
 
 public class Product implements Serializable {
+
+    // serialVersionUID is used for serialization and deserialization
     private static final long serialVersionUID = 1L;
 
+    // Class attributes corresponding to the products table columns in the database
     private long productId;
     private String productName;
     private String productDescription;
@@ -15,9 +18,28 @@ public class Product implements Serializable {
     private Date createdAt;
     private Date updatedAt;
 
-    // Constructors
-    public Product() {}
+    // Default constructor
+    public Product() {
+        // Default constructor is often required for ORM (Object-Relational Mapping) frameworks and form submissions.
+    }
 
+    // Constructor with parameters for product creation without ID (auto-generated)
+    public Product(String productName, String productDescription, double price, boolean inStock) {
+        this.productName = productName;
+        this.productDescription = productDescription;
+        this.price = price;
+        this.inStock = inStock;
+    }
+    public Product(long productId, String productName, String productDescription, double price, boolean inStock) {
+        this.productId = productId;
+        this.productName = productName;
+        this.productDescription = productDescription;
+        this.price = price;
+        this.inStock = inStock;
+        // The createdAt and updatedAt fields are omitted, potentially to be managed by the database.
+    }
+
+    // Full constructor including productId for complete instantiation
     public Product(long productId, String productName, String productDescription, double price, boolean inStock, Date createdAt, Date updatedAt) {
         this.productId = productId;
         this.productName = productName;
@@ -28,7 +50,7 @@ public class Product implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    // Getters and Setters
+    // Getters and Setters for each attribute
     public long getProductId() {
         return productId;
     }
@@ -85,7 +107,7 @@ public class Product implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    // toString, equals, and hashCode methods
+    // Override toString for object representation in a string format
     @Override
     public String toString() {
         return "Product{" +
@@ -99,6 +121,7 @@ public class Product implements Serializable {
                 '}';
     }
 
+    // Override equals and hashCode for object comparison
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

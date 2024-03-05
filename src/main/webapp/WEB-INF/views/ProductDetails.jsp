@@ -1,41 +1,33 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="your.package.Product" %> <!-- Make sure to replace 'your.package' with the actual package name where your Product class is located -->
-<html>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="com.example.orderdatabase.model.Product" %>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Product Details</title>
-    <style>
-        /* Basic styling; replace or extend as needed */
-        body {
-            font-family: Arial, sans-serif;
-        }
-        .product-image {
-            max-width: 300px;
-            max-height: 300px;
-            padding: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
-<%
-    // Retrieve the product object passed from the servlet
-    Product product = (Product) request.getAttribute("product");
-    if (product != null) {
-%>
-<h2><%= product.getName() %></h2>
-<% if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) { %>
-<img src="<%= product.getImageUrl() %>" alt="Product Image" class="product-image"/>
-<% } %>
-<p><%= product.getDescription() %></p>
-<p>Category: <%= product.getCategory() %></p> <!-- Assuming there's a getCategory() method -->
-<p>Price: $<%= product.getPrice() %></p>
-<!-- Add more product details as needed -->
-<a href="addToCart?id=<%= product.getId() %>">Add to Cart</a> <!-- Placeholder link; implement cart functionality as needed -->
-<%
-} else {
-%>
-<p>Product not found.</p>
-<%
-    }
-%>
+
+<div class="container mt-5">
+    <%
+        Product product = (Product) request.getAttribute("product");
+        if (product != null) {
+    %>
+    <h2 class="mb-3"><%= product.getProductName() %></h2>
+    <p><%= product.getProductDescription() %></p>
+    <p>Price: $<%= product.getPrice() %></p>
+    <p>Status: <%= product.isInStock() ? "In Stock" : "Out of Stock" %></p>
+    <a href="#" class="btn btn-success">Add to Cart</a> <!-- Implement Add to Cart functionality -->
+    <%
+    } else {
+    %>
+    <p class="text-warning">Product not found.</p>
+    <%
+        }
+    %>
+</div>
+
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
-package com.example.tododatabase.dao;
+package com.example.orderdatabase.dao;
 
-import com.example.tododatabase.database.MySQLConnection;
-import com.example.tododatabase.model.User;
+import com.example.orderdatabase.database.MySQLConnection;
+import com.example.orderdatabase.model.User;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.*;

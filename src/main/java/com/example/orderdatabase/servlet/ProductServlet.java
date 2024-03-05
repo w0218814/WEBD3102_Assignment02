@@ -66,7 +66,6 @@ public class ProductServlet extends HttpServlet {
         dispatcher.forward(request, response);
     }
 
-
     private void showNewForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         // Updated to use the correct path to the JSP files
@@ -106,8 +105,9 @@ public class ProductServlet extends HttpServlet {
         double price = Double.parseDouble(request.getParameter("price"));
         boolean inStock = Boolean.parseBoolean(request.getParameter("inStock"));
 
-        Product book = new Product(id, name, description, price, inStock);
-        productDAO.updateProduct(book);
+        Product game = new Product(id, name, description, price, inStock);
+
+        productDAO.updateProduct(game);
         response.sendRedirect("list");
     }
 
