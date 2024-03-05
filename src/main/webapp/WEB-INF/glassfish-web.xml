@@ -3,6 +3,6 @@
 <glassfish-web-app>
     <resource-ref>
         <res-ref-name>jdbc/myDataSource</res-ref-name>
-        <jndi-name>jdbc/myDataSource</jndi-name>
+        <jndi-nrame>jdbc/myDataSource</jndi-nrame>
     </resource-ref>
 </glassfish-web-app>

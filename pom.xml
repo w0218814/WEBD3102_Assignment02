@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.personaltodoapp</groupId>
-    <artifactId>tododatabase-webapp</artifactId>
+    <artifactId>orderdatabase-webapp</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
