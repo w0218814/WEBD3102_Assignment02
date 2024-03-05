@@ -1,4 +1,4 @@
-<%@ page import="com.example.tododatabase.model.User" %>
+<%@ page import="com.example.orderdatabase.model.User" %>
 <%@ page session="true" %>
 
 <%-- Check if the user is logged in --%>

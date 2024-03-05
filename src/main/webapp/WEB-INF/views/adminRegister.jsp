@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.List"%> <!-- Importing List class -->
-<%@ page import="com.example.tododatabase.model.User"%> <!-- Importing User class -->
+<%@ page import="com.example.orderdatabase.model.User"%> <!-- Importing User class -->
 <!DOCTYPE html>
 <html lang="en">
 <head>

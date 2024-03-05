@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.util.List" %>
 <%@ page import="com.example.orderdatabase.model.Product" %>
 <!DOCTYPE html>
 <html lang="en">
@@ -10,19 +11,26 @@
 <body>
 
 <div class="container mt-5">
+    <h2 class="mb-3">Product List</h2>
     <%
-        Product product = (Product) request.getAttribute("product");
-        if (product != null) {
+        List<Product> listProduct = (List<Product>) request.getAttribute("listProduct");
+        if (listProduct != null && !listProduct.isEmpty()) {
+            for (Product product : listProduct) {
     %>
-    <h2 class="mb-3"><%= product.getProductName() %></h2>
-    <p><%= product.getProductDescription() %></p>
-    <p>Price: $<%= product.getPrice() %></p>
-    <p>Status: <%= product.isInStock() ? "In Stock" : "Out of Stock" %></p>
-    <a href="#" class="btn btn-success">Add to Cart</a> <!-- Implement Add to Cart functionality -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title"><%= product.getProductName() %></h5>
+            <p class="card-text"><%= product.getProductDescription() %></p>
+            <p>Price: $<%= product.getPrice() %></p>
+            <p>Status: <%= product.isInStock() ? "In Stock" : "Out of Stock" %></p>
+            <a href="#" class="btn btn-success">Add to Cart</a> <!-- Implement Add to Cart functionality -->
+        </div>
+    </div>
     <%
+        }
     } else {
     %>
-    <p class="text-warning">Product not found.</p>
+    <p class="text-warning">No products found.</p>
     <%
         }
     %>

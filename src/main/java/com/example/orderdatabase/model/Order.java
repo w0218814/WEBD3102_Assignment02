@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
 
-
 public class Order implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -15,10 +14,12 @@ public class Order implements Serializable {
     private String status;
     private boolean isFulfilled;
 
-    // Constructors
+    // Default constructor
     public Order() {
+        // Default constructor is often required for ORM (Object-Relational Mapping) frameworks and form submissions.
     }
 
+    // Constructor with all the fields for complete instantiation
     public Order(long orderId, long userId, Date orderDate, double totalAmount, String status, boolean isFulfilled) {
         this.orderId = orderId;
         this.userId = userId;
@@ -28,7 +29,7 @@ public class Order implements Serializable {
         this.isFulfilled = isFulfilled;
     }
 
-    // Getters and Setters
+    // Getters and setters for all fields
 
     public long getOrderId() {
         return orderId;
@@ -78,7 +79,8 @@ public class Order implements Serializable {
         isFulfilled = fulfilled;
     }
 
-    // toString, equals, and hashCode methods
+    // Overridden toString method for object representation in string format
+
     @Override
     public String toString() {
         return "Order{" +
@@ -91,6 +93,8 @@ public class Order implements Serializable {
                 '}';
     }
 
+    // Overridden equals and hashCode methods for object comparison
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -101,7 +105,7 @@ public class Order implements Serializable {
                 Double.compare(order.getTotalAmount(), getTotalAmount()) == 0 &&
                 isFulfilled() == order.isFulfilled() &&
                 getOrderDate().equals(order.getOrderDate()) &&
-                getStatus().equals(order.getStatus());
+                Objects.equals(getStatus(), order.getStatus());
     }
 
     @Override

@@ -12,39 +12,45 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
-@WebServlet("/ProductServlet")
+@WebServlet(name = "ProductServlet", urlPatterns = {"/product/*"})
 public class ProductServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private ProductDAO productDAO;
 
+    @Override
     public void init() {
         productDAO = new ProductDAO();
     }
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String action = request.getParameter("action");
-        if (action == null) {
-            action = "list";
-        }
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        doGet(request, response); // Route POST requests to doGet for simplicity.
+    }
 
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String pathInfo = request.getPathInfo() != null ? request.getPathInfo() : "/";
         try {
-            switch (action) {
-                case "new":
-                    showNewForm(request, response);
+            switch (pathInfo) {
+                case "/list":
+                    listProducts(request, response);
                     break;
-                case "insert":
-                    insertProduct(request, response);
+                case "/insert":
+                    // Display form for inserting a new product or handle the insertion if this is a form submission
+                    // Example: showInsertForm(request, response) or insertProduct(request, response)
                     break;
-                case "delete":
-                    deleteProduct(request, response);
+                case "/update":
+                    // Display form for updating an existing product or handle the update if this is a form submission
+                    // Example: showUpdateForm(request, response) or updateProduct(request, response)
                     break;
-                case "edit":
-                    showEditForm(request, response);
-                    break;
-                case "update":
-                    updateProduct(request, response);
+                case "/delete":
+                    // Handle product deletion
+                    // Example: deleteProduct(request, response)
                     break;
                 default:
+                    // For any other GET request, redirect to the product list
                     listProducts(request, response);
                     break;
             }
@@ -53,68 +59,13 @@ public class ProductServlet extends HttpServlet {
         }
     }
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        doPost(request, response);
-    }
-
     private void listProducts(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
         List<Product> listProduct = productDAO.selectAllProducts();
         request.setAttribute("listProduct", listProduct);
-        // Updated to use the correct path to the JSP files
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/ProductList.jsp");
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/ProductDetails.jsp");
         dispatcher.forward(request, response);
     }
 
-    private void showNewForm(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        // Updated to use the correct path to the JSP files
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/ProductForm.jsp");
-        dispatcher.forward(request, response);
-    }
-
-    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, ServletException, IOException {
-        long id = Long.parseLong(request.getParameter("id"));
-        Product existingProduct = productDAO.selectProduct(id);
-        // Updated to use the correct path to the JSP files
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/ProductForm.jsp");
-        request.setAttribute("product", existingProduct);
-        dispatcher.forward(request, response);
-    }
-
-
-    private void insertProduct(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException {
-        String name = request.getParameter("name");
-        String description = request.getParameter("description");
-        double price = Double.parseDouble(request.getParameter("price"));
-        boolean inStock = Boolean.parseBoolean(request.getParameter("inStock"));
-
-        Product newProduct = new Product(name, description, price, inStock);
-        productDAO.insertProduct(newProduct);
-        response.sendRedirect("list");
-    }
-
-    private void updateProduct(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException {
-        long id = Long.parseLong(request.getParameter("id"));
-
-        String name = request.getParameter("name");
-        String description = request.getParameter("description");
-        double price = Double.parseDouble(request.getParameter("price"));
-        boolean inStock = Boolean.parseBoolean(request.getParameter("inStock"));
-
-        Product game = new Product(id, name, description, price, inStock);
-
-        productDAO.updateProduct(game);
-        response.sendRedirect("list");
-    }
-
-    private void deleteProduct(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException {
-        long id = Long.parseLong(request.getParameter("id"));
-        productDAO.deleteProduct(id);
-        response.sendRedirect("list");
-    }
+    // Placeholder methods for insertProduct, updateProduct, deleteProduct, showInsertForm, showUpdateForm
 }

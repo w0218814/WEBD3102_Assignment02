@@ -1,4 +1,4 @@
-package com.example.tododatabase.model;
+package com.example.orderdatabase.model;
 
 import java.io.Serializable;
 import java.util.Objects;

@@ -14,7 +14,7 @@
     <!-- Servlet Configuration: Defines servlets and their mappings -->
     <servlet>
         <servlet-name>UserServlet</servlet-name> <!-- Name of the servlet -->
-        <servlet-class>com.example.tododatabase.servlet.UserServlet</servlet-class> <!-- Servlet class -->
+        <servlet-class>com.example.orderdatabase.servlet.UserServlet</servlet-class> <!-- Servlet class -->
     </servlet>
     <servlet-mapping>
         <servlet-name>UserServlet</servlet-name> <!-- Name of the servlet to map -->
@@ -24,21 +24,31 @@
     <!-- Similar configuration for AdminServlet -->
     <servlet>
         <servlet-name>AdminServlet</servlet-name>
-        <servlet-class>com.example.tododatabase.servlet.AdminServlet</servlet-class>
+        <servlet-class>com.example.orderdatabase.servlet.AdminServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>AdminServlet</servlet-name>
         <url-pattern>/admin/*</url-pattern>
     </servlet-mapping>
 
-    <!-- Similar configuration for TodoServlet -->
+    <!-- Similar configuration for OrderServlet -->
     <servlet>
-        <servlet-name>TodoServlet</servlet-name>
-        <servlet-class>com.example.tododatabase.servlet.TodoServlet</servlet-class>
+        <servlet-name>OrderServlet</servlet-name>
+        <servlet-class>com.example.orderdatabase.servlet.OrderServlet</servlet-class>
     </servlet>
     <servlet-mapping>
-        <servlet-name>TodoServlet</servlet-name>
-        <url-pattern>/todo/*</url-pattern>
+        <servlet-name>OrderServlet</servlet-name>
+        <url-pattern>/order/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- Similar configuration for OrderServlet -->
+    <servlet>
+        <servlet-name>ProductServlet</servlet-name>
+        <servlet-class>com.example.orderdatabase.servlet.ProductServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProductServlet</servlet-name>
+        <url-pattern>/product/*</url-pattern>
     </servlet-mapping>
 
     <!-- Welcome File List: Specifies the default file to be loaded -->

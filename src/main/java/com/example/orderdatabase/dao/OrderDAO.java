@@ -8,7 +8,7 @@ import java.util.List;
 
 public class OrderDAO {
     // Database connection details
-    private String jdbcURL = "jdbc:mysql://localhost:3306/orderdatabase"; // Update with your database URL
+    private String jdbcURL = "jdbc:mysql://127.0.0.1:3306/orderdatabase"; // Update with your database URL
     private String jdbcUsername = "root"; // Update with your database username
     private String jdbcPassword = "inet2005"; // Update with your database password
 
@@ -74,7 +74,7 @@ public class OrderDAO {
                 String status = rs.getString("status");
                 Date orderDate = new Date(rs.getTimestamp("orderDate").getTime());
                 boolean isFulfilled = rs.getBoolean("isFulfilled");
-                Order order = new Order(orderId, userId, orderDate, isFulfilled, totalAmount, status);
+                Order order = new Order(orderId, userId, orderDate, totalAmount, status, isFulfilled);
                 orders.add(order);
             }
         } catch (SQLException e) {
@@ -99,7 +99,7 @@ public class OrderDAO {
                 Date orderDate = new Date(rs.getTimestamp("orderDate").getTime());
                 boolean isFulfilled = rs.getBoolean("isFulfilled");
 
-                order = new Order(orderId, userId, orderDate, isFulfilled, totalAmount, status);
+                order = new Order(orderId, userId, orderDate, totalAmount, status, isFulfilled);
             }
         } catch (SQLException e) {
             printSQLException(e);

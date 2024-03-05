@@ -1,7 +1,7 @@
-package com.example.tododatabase.servlet;
+package com.example.orderdatabase.servlet;
 
-import com.example.tododatabase.dao.UserDAO;
-import com.example.tododatabase.model.User;
+import com.example.orderdatabase.dao.UserDAO;
+import com.example.orderdatabase.model.User;
 import org.mindrot.jbcrypt.BCrypt;
 
 import jakarta.servlet.ServletException;
