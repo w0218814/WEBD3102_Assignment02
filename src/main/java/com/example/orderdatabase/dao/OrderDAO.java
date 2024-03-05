@@ -8,16 +8,17 @@ import java.util.List;
 
 public class OrderDAO {
     // Database connection details
-    private String jdbcURL = "jdbc:mysql://localhost:3306/yourDatabaseName"; // Update with your database URL
-    private String jdbcUsername = "yourUsername"; // Update with your database username
-    private String jdbcPassword = "yourPassword"; // Update with your database password
+    private String jdbcURL = "jdbc:mysql://localhost:3306/orderdatabase"; // Update with your database URL
+    private String jdbcUsername = "root"; // Update with your database username
+    private String jdbcPassword = "inet2005"; // Update with your database password
 
     // SQL queries for CRUD operations
-    private static final String INSERT_ORDER_SQL = "INSERT INTO orders (user_id, total_price, status, order_date) VALUES (?, ?, ?, ?);";
-    private static final String SELECT_ORDER_BY_ID = "SELECT id, user_id, total_price, status, order_date FROM orders WHERE id = ?";
-    private static final String SELECT_ALL_ORDERS_BY_USER_ID = "SELECT * FROM orders WHERE user_id = ?";
-    // Add more queries as needed, such as UPDATE_ORDER_SQL for updating an order's details or status
+    // MODIFIED: Changed user_id to userId, total_price to totalAmount, isFulfilled is included in the SELECT queries
+    private static final String INSERT_ORDER_SQL = "INSERT INTO orders (userId, orderDate, totalAmount, status) VALUES (?, ?, ?, ?);";
+    private static final String SELECT_ORDER_BY_ID = "SELECT orderId, userId, orderDate, totalAmount, status, isFulfilled FROM orders WHERE orderId = ?";
+    private static final String SELECT_ALL_ORDERS_BY_USER_ID = "SELECT * FROM orders WHERE userId = ?";
 
+    // UNCHANGED: getConnection method remains the same
     protected Connection getConnection() {
         Connection connection = null;
         try {
@@ -31,35 +32,50 @@ public class OrderDAO {
         return connection;
     }
 
+    // MODIFIED: Updated the method to match the Order class constructor and include totalAmount and status
     public void createOrder(Order order) {
         // Example implementation for creating a new order in the database
         try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_ORDER_SQL)) {
-            preparedStatement.setInt(1, order.getUserId());
-            preparedStatement.setDouble(2, order.getTotalPrice());
-            preparedStatement.setString(3, order.getStatus());
-            preparedStatement.setDate(4, new java.sql.Date(order.getOrderDate().getTime()));
+             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_ORDER_SQL, Statement.RETURN_GENERATED_KEYS)) {
+            preparedStatement.setLong(1, order.getUserId());
+            preparedStatement.setTimestamp(2, new Timestamp(order.getOrderDate().getTime()));
+            preparedStatement.setDouble(3, order.getTotalAmount());
+            preparedStatement.setString(4, order.getStatus());
 
-            preparedStatement.executeUpdate();
+            int affectedRows = preparedStatement.executeUpdate();
+
+            if (affectedRows > 0) {
+                // Retrieve the generated key for the orderId
+                try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        order.setOrderId(generatedKeys.getLong(1));
+                    } else {
+                        throw new SQLException("Creating order failed, no ID obtained.");
+                    }
+                }
+            }
         } catch (SQLException e) {
             printSQLException(e);
         }
     }
 
-    public List<Order> getUserOrders(int userId) {
+    // MODIFIED: Updated the method to include new fields totalAmount and status
+    public List<Order> getUserOrders(long userId) {
         List<Order> orders = new ArrayList<>();
         // Example implementation for retrieving orders by user ID
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_ORDERS_BY_USER_ID)) {
-            preparedStatement.setInt(1, userId);
+            preparedStatement.setLong(1, userId);
             ResultSet rs = preparedStatement.executeQuery();
 
             while (rs.next()) {
-                int id = rs.getInt("id");
-                double totalPrice = rs.getDouble("total_price");
+                long orderId = rs.getLong("orderId");
+                double totalAmount = rs.getDouble("totalAmount");
                 String status = rs.getString("status");
-                Date orderDate = rs.getDate("order_date");
-                orders.add(new Order(id, userId, totalPrice, status, orderDate));
+                Date orderDate = new Date(rs.getTimestamp("orderDate").getTime());
+                boolean isFulfilled = rs.getBoolean("isFulfilled");
+                Order order = new Order(orderId, userId, orderDate, isFulfilled, totalAmount, status);
+                orders.add(order);
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -67,20 +83,23 @@ public class OrderDAO {
         return orders;
     }
 
-    public Order getOrderById(int orderId) {
+    // MODIFIED: Updated the method to include new fields totalAmount and status
+    public Order getOrderById(long orderId) {
         Order order = null;
         // Example implementation for retrieving an order by its ID
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ORDER_BY_ID)) {
-            preparedStatement.setInt(1, orderId);
+            preparedStatement.setLong(1, orderId);
             ResultSet rs = preparedStatement.executeQuery();
 
             if (rs.next()) {
-                int userId = rs.getInt("user_id");
-                double totalPrice = rs.getDouble("total_price");
+                long userId = rs.getLong("userId");
+                double totalAmount = rs.getDouble("totalAmount");
                 String status = rs.getString("status");
-                Date orderDate = rs.getDate("order_date");
-                order = new Order(orderId, userId, totalPrice, status, orderDate);
+                Date orderDate = new Date(rs.getTimestamp("orderDate").getTime());
+                boolean isFulfilled = rs.getBoolean("isFulfilled");
+
+                order = new Order(orderId, userId, orderDate, isFulfilled, totalAmount, status);
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -88,8 +107,7 @@ public class OrderDAO {
         return order;
     }
 
-    // Implement additional methods as needed for updating and deleting orders
-
+    // UNCHANGED: The printSQLException method remains the same
     private void printSQLException(SQLException ex) {
         for (Throwable e : ex) {
             if (e instanceof SQLException) {
@@ -99,6 +117,7 @@ public class OrderDAO {
                 System.err.println("Message: " + e.getMessage());
                 Throwable t = ex.getCause();
                 while (t != null) {
+                    System.out.println("Cause: " + t);
                     t = t.getCause();
                 }
             }

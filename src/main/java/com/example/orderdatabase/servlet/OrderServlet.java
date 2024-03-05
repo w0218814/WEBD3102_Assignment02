@@ -1,16 +1,21 @@
 package com.example.orderdatabase.servlet;
 
+import com.example.orderdatabase.dao.OrderDAO;
+import com.example.orderdatabase.model.Order;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.IOException;
+
+// Ensure OrderDAO is imported if it's in a different package
+import com.example.orderdatabase.dao.OrderDAO;
 
 public class OrderServlet extends HttpServlet {
     private OrderDAO orderDAO;
 
     @Override
-    public void init() {
+    public void init() throws ServletException {
         // Initialize the DAO
-        orderDAO = new OrderDAO(); // Assuming OrderDAO is properly defined elsewhere
+        this.orderDAO = new OrderDAO(); // Make sure OrderDAO is properly defined
     }
 
     @Override
@@ -39,41 +44,43 @@ public class OrderServlet extends HttpServlet {
                     break;
             }
         } catch (Exception ex) {
-            // Exception handling: Log and throw a ServletException
-            ex.printStackTrace();
+            // Replace printStackTrace with proper logging
+            log("ServletException in OrderServlet: ", ex);
             throw new ServletException(ex);
         }
     }
 
-    private void placeOrder(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        // Example implementation for placing an order
-        // Extract order details from the request
-        // Note: Implementation details such as retrieving form data, creating an Order object,
-        // and calling orderDAO to save the order would go here
+    private void placeOrder(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        // Implementation details for placing an order
 
+        // Example:
+        // Order newOrder = new Order();
+        // Populate the order details from the request
+        // orderDAO.createOrder(newOrder);
         // Redirect to the order list page after placing the order
         response.sendRedirect("orderList");
     }
 
     private void listOrders(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Example implementation for listing orders for a user
         // Assume the user ID is retrieved from the session or another mechanism
-        int userId = 1; // Placeholder value
-        // Retrieve the list of orders for the user from the DAO
+        // Cast to the appropriate type if necessary (int to long)
+        Long userId = (Long) request.getSession().getAttribute("userId"); // Updated to Long to match the database
         request.setAttribute("orderList", orderDAO.getUserOrders(userId));
-        // Forward to the JSP page for rendering the list
         RequestDispatcher dispatcher = request.getRequestDispatcher("OrderList.jsp");
         dispatcher.forward(request, response);
     }
 
     private void showOrderDetails(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Example implementation for showing order details
-        // Retrieve the order ID from the request
-        int orderId = Integer.parseInt(request.getParameter("id"));
-        // Retrieve the order details from the DAO
+        // Retrieve the order ID from the request and cast to long
+        Long orderId = Long.parseLong(request.getParameter("id"));
         request.setAttribute("order", orderDAO.getOrderById(orderId));
-        // Forward to the JSP page for rendering the order details
         RequestDispatcher dispatcher = request.getRequestDispatcher("OrderDetails.jsp");
         dispatcher.forward(request, response);
+    }
+
+    // Overriding the destroy() method if you need to release any resources
+    @Override
+    public void destroy() {
+        // Resources release logic, if needed
     }
 }
