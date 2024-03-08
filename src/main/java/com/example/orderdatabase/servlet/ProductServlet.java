@@ -1,8 +1,8 @@
 package com.example.orderdatabase.servlet;
 
-import jakarta.servlet.RequestDispatcher;
 import com.example.orderdatabase.dao.ProductDAO;
 import com.example.orderdatabase.model.Product;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -11,11 +11,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebServlet(name = "ProductServlet", urlPatterns = {"/product/*"})
 public class ProductServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private ProductDAO productDAO;
+    private final static Logger LOGGER = Logger.getLogger(ProductServlet.class.getName());
 
     @Override
     public void init() {
@@ -25,7 +28,7 @@ public class ProductServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        doGet(request, response); // Route POST requests to doGet for simplicity.
+        doGet(request, response);
     }
 
     @Override
@@ -37,35 +40,36 @@ public class ProductServlet extends HttpServlet {
                 case "/list":
                     listProducts(request, response);
                     break;
-                case "/insert":
-                    // Display form for inserting a new product or handle the insertion if this is a form submission
-                    // Example: showInsertForm(request, response) or insertProduct(request, response)
-                    break;
-                case "/update":
-                    // Display form for updating an existing product or handle the update if this is a form submission
-                    // Example: showUpdateForm(request, response) or updateProduct(request, response)
-                    break;
-                case "/delete":
-                    // Handle product deletion
-                    // Example: deleteProduct(request, response)
-                    break;
+                // Other cases for insert, update, delete would go here
                 default:
-                    // For any other GET request, redirect to the product list
                     listProducts(request, response);
                     break;
             }
         } catch (SQLException ex) {
-            throw new ServletException(ex);
+            LOGGER.log(Level.SEVERE, "SQL error occurred", ex);
+            throw new ServletException("Database access error!", ex);
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, "General error occurred", ex);
+            throw new ServletException("An error occurred processing your request", ex);
         }
     }
 
     private void listProducts(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
-        List<Product> listProduct = productDAO.selectAllProducts();
+        int page = 1;
+        int recordsPerPage = 25;
+        if (request.getParameter("page") != null) {
+            page = Integer.parseInt(request.getParameter("page"));
+        }
+        List<Product> listProduct = productDAO.selectProducts((page - 1) * recordsPerPage, recordsPerPage);
+        int noOfRecords = productDAO.getNoOfRecords();
+        int noOfPages = (int) Math.ceil(noOfRecords * 1.0 / recordsPerPage);
+
         request.setAttribute("listProduct", listProduct);
+        request.setAttribute("noOfPages", noOfPages);
+        request.setAttribute("currentPage", page);
+
         RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/ProductDetails.jsp");
         dispatcher.forward(request, response);
     }
-
-    // Placeholder methods for insertProduct, updateProduct, deleteProduct, showInsertForm, showUpdateForm
 }

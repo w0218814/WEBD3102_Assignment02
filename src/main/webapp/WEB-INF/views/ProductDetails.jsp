@@ -14,9 +14,13 @@
     <h2 class="mb-3">Product List</h2>
     <%
         List<Product> listProduct = (List<Product>) request.getAttribute("listProduct");
+        Integer noOfPages = (Integer) request.getAttribute("noOfPages");
+        Integer currentPage = (Integer) request.getAttribute("currentPage");
+
         if (listProduct != null && !listProduct.isEmpty()) {
-            for (Product product : listProduct) {
     %>
+    <p class='text-info'>Number of products found: <%= listProduct.size() %></p>
+    <% for (Product product : listProduct) { %>
     <div class="card mb-3">
         <div class="card-body">
             <h5 class="card-title"><%= product.getProductName() %></h5>
@@ -26,14 +30,19 @@
             <a href="#" class="btn btn-success">Add to Cart</a> <!-- Implement Add to Cart functionality -->
         </div>
     </div>
-    <%
-        }
-    } else {
-    %>
-    <p class="text-warning">No products found.</p>
-    <%
-        }
-    %>
+    <% } %>
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            <% for(int i = 1; i <= noOfPages; i++) { %>
+            <li class="page-item <%= (i == currentPage) ? "active" : "" %>">
+                <a class="page-link" href="product/list?page=<%= i %>"><%= i %></a>
+            </li>
+            <% } %>
+        </ul>
+    </nav>
+    <% } else { %>
+    <p class='text-warning'>No products found.</p>
+    <% } %>
 </div>
 
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
