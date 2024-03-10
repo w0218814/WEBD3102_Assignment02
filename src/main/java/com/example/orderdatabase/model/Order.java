@@ -1,26 +1,23 @@
 package com.example.orderdatabase.model;
 
-import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
-import java.util.Objects;
+import java.util.List;
 
-public class Order implements Serializable {
-    private static final long serialVersionUID = 1L;
-
+public class Order {
     private long orderId;
     private long userId;
     private Date orderDate;
-    private double totalAmount;
+    private BigDecimal totalAmount;
     private String status;
     private boolean isFulfilled;
+    private List<OrderItem> orderItems; // A list to hold order items
 
     // Default constructor
-    public Order() {
-        // Default constructor is often required for ORM (Object-Relational Mapping) frameworks and form submissions.
-    }
+    public Order() {}
 
-    // Constructor with all the fields for complete instantiation
-    public Order(long orderId, long userId, Date orderDate, double totalAmount, String status, boolean isFulfilled) {
+    // Constructor without order items
+    public Order(long orderId, long userId, Date orderDate, BigDecimal totalAmount, String status, boolean isFulfilled) {
         this.orderId = orderId;
         this.userId = userId;
         this.orderDate = orderDate;
@@ -29,8 +26,13 @@ public class Order implements Serializable {
         this.isFulfilled = isFulfilled;
     }
 
-    // Getters and setters for all fields
+    // Constructor including order items
+    public Order(long orderId, long userId, Date orderDate, BigDecimal totalAmount, String status, boolean isFulfilled, List<OrderItem> orderItems) {
+        this(orderId, userId, orderDate, totalAmount, status, isFulfilled);
+        this.orderItems = orderItems;
+    }
 
+    // Getters and setters
     public long getOrderId() {
         return orderId;
     }
@@ -55,11 +57,11 @@ public class Order implements Serializable {
         this.orderDate = orderDate;
     }
 
-    public double getTotalAmount() {
+    public BigDecimal getTotalAmount() {
         return totalAmount;
     }
 
-    public void setTotalAmount(double totalAmount) {
+    public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
     }
 
@@ -75,41 +77,15 @@ public class Order implements Serializable {
         return isFulfilled;
     }
 
-    public void setFulfilled(boolean fulfilled) {
-        isFulfilled = fulfilled;
+    public void setFulfilled(boolean isFulfilled) {
+        this.isFulfilled = isFulfilled;
     }
 
-    // Overridden toString method for object representation in string format
-
-    @Override
-    public String toString() {
-        return "Order{" +
-                "orderId=" + orderId +
-                ", userId=" + userId +
-                ", orderDate=" + orderDate +
-                ", totalAmount=" + totalAmount +
-                ", status='" + status + '\'' +
-                ", isFulfilled=" + isFulfilled +
-                '}';
+    public List<OrderItem> getOrderItems() {
+        return orderItems;
     }
 
-    // Overridden equals and hashCode methods for object comparison
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Order)) return false;
-        Order order = (Order) o;
-        return getOrderId() == order.getOrderId() &&
-                getUserId() == order.getUserId() &&
-                Double.compare(order.getTotalAmount(), getTotalAmount()) == 0 &&
-                isFulfilled() == order.isFulfilled() &&
-                getOrderDate().equals(order.getOrderDate()) &&
-                Objects.equals(getStatus(), order.getStatus());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getOrderId(), getUserId(), getOrderDate(), getTotalAmount(), getStatus(), isFulfilled());
+    public void setOrderItems(List<OrderItem> orderItems) {
+        this.orderItems = orderItems;
     }
 }

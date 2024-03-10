@@ -2,47 +2,55 @@ package com.example.orderdatabase.servlet;
 
 import com.example.orderdatabase.dao.ProductDAO;
 import com.example.orderdatabase.model.Product;
+import com.example.orderdatabase.model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-// Handles all /product/* URL patterns
 @WebServlet(name = "ProductServlet", urlPatterns = {"/product/*"})
 public class ProductServlet extends HttpServlet {
     private ProductDAO productDAO;
     private final static Logger LOGGER = Logger.getLogger(ProductServlet.class.getName());
 
-    // Initialization
     public void init() {
         this.productDAO = new ProductDAO();
     }
 
-    // Handles GET requests
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getPathInfo();
+        HttpSession session = request.getSession(false); // Don't create a session if it doesn't exist
+
+        // Check if the user is logged in by looking for a user object in the session
+        User user = (session != null) ? (User) session.getAttribute("user") : null;
 
         try {
             switch (action) {
-                case "/new":
-                    // Code for showing new product form (unchanged)
-                    break;
-                case "/edit":
-                    // Code for showing edit product form (unchanged)
-                    break;
-                case "/delete":
-                    // Code for handling delete (unchanged)
-                    break;
                 case "/list":
-                default:
                     listProducts(request, response);
+                    break;
+                case "/details":
+                    // Redirect to login if user is not logged in
+                    if (user == null) {
+                        String productId = request.getParameter("id"); // Get the product ID from the request
+                        session = request.getSession(true); // Create a new session if one doesn't exist
+                        session.setAttribute("pendingProductId", Long.parseLong(productId)); // Save the product ID to redirect after login
+                        response.sendRedirect(request.getContextPath() + "/login"); // Redirect to login
+                    } else {
+                        showProductDetails(request, response);
+                    }
+                    break;
+                default:
+                    response.sendError(HttpServletResponse.SC_NOT_FOUND);
                     break;
             }
         } catch (SQLException ex) {
@@ -51,14 +59,31 @@ public class ProductServlet extends HttpServlet {
         }
     }
 
-    // Handles POST requests
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        // Your existing code to handle POST requests for insert, update, delete actions
-        // Unchanged
+
+    private void showProductDetails(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
+        // Assume there's a "id" parameter in the request to identify the product
+        String idStr = request.getParameter("id");
+        if (idStr == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Product ID is missing");
+            return;
+        }
+
+        try {
+            long id = Long.parseLong(idStr);
+            Product product = productDAO.selectProduct(id);
+            if (product == null) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Product not found");
+                return;
+            }
+            request.setAttribute("product", product);
+            request.getRequestDispatcher("/WEB-INF/views/product-details.jsp").forward(request, response);
+        } catch (NumberFormatException e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid product ID format");
+        }
     }
 
-    // Method to list products to be displayed in JSP
+
     private void listProducts(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
         List<Product> listProduct = productDAO.selectAllProducts();
@@ -66,42 +91,6 @@ public class ProductServlet extends HttpServlet {
         request.getRequestDispatcher("/WEB-INF/views/product-list.jsp").forward(request, response);
     }
 
-
-    private void insertProduct(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException {
-        String name = request.getParameter("name");
-        String description = request.getParameter("description");
-        double price = Double.parseDouble(request.getParameter("price"));
-
-        Product newProduct = new Product();
-        newProduct.setProductName(name);
-        newProduct.setProductDescription(description);
-        newProduct.setPrice(price);
-
-        productDAO.insertProduct(newProduct);
-        response.sendRedirect("list");
-    }
-
-    private void updateProduct(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException {
-        long id = Long.parseLong(request.getParameter("id"));
-        String name = request.getParameter("name");
-        String description = request.getParameter("description");
-        double price = Double.parseDouble(request.getParameter("price"));
-
-        Product product = new Product(id, name, description, price);
-
-        productDAO.updateProduct(product);
-        response.sendRedirect("list");
-    }
-
-    private void deleteProduct(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException {
-        long id = Long.parseLong(request.getParameter("id"));
-
-        productDAO.deleteProduct(id);
-        response.sendRedirect("list");
-    }
-
-    // Other necessary methods...
+    // Insert, update, delete methods have been removed as per your request
+    // Add other methods if necessary
 }

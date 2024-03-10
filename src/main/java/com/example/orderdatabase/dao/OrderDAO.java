@@ -1,126 +1,120 @@
 package com.example.orderdatabase.dao;
 
+import com.example.orderdatabase.database.MySQLConnection;
 import com.example.orderdatabase.model.Order;
+import com.example.orderdatabase.model.OrderItem;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class OrderDAO {
-    // Database connection details
-    private String jdbcURL = "jdbc:mysql://127.0.0.1:3306/orderdatabase"; // Update with your database URL
-    private String jdbcUsername = "root"; // Update with your database username
-    private String jdbcPassword = "inet2005"; // Update with your database password
 
-    // SQL queries for CRUD operations
-    // MODIFIED: Changed user_id to userId, total_price to totalAmount, isFulfilled is included in the SELECT queries
-    private static final String INSERT_ORDER_SQL = "INSERT INTO orders (userId, orderDate, totalAmount, status) VALUES (?, ?, ?, ?);";
-    private static final String SELECT_ORDER_BY_ID = "SELECT orderId, userId, orderDate, totalAmount, status, isFulfilled FROM orders WHERE orderId = ?";
-    private static final String SELECT_ALL_ORDERS_BY_USER_ID = "SELECT * FROM orders WHERE userId = ?";
-
-    // UNCHANGED: getConnection method remains the same
-    protected Connection getConnection() {
-        Connection connection = null;
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection(jdbcURL, jdbcUsername, jdbcPassword);
-        } catch (SQLException e) {
-            printSQLException(e);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace(); // Handle the error appropriately
-        }
-        return connection;
+    public OrderDAO() {
+        // Constructor remains unchanged
     }
 
-    // MODIFIED: Updated the method to match the Order class constructor and include totalAmount and status
-    public void createOrder(Order order) {
-        // Example implementation for creating a new order in the database
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_ORDER_SQL, Statement.RETURN_GENERATED_KEYS)) {
-            preparedStatement.setLong(1, order.getUserId());
-            preparedStatement.setTimestamp(2, new Timestamp(order.getOrderDate().getTime()));
-            preparedStatement.setDouble(3, order.getTotalAmount());
-            preparedStatement.setString(4, order.getStatus());
+    // This method inserts a new order without considering order items
+    public boolean addOrder(long userId, BigDecimal totalAmount, String status) throws SQLException {
+        // Unchanged code for adding an order
+        String insertOrderSql = "INSERT INTO orders (userId, orderDate, totalAmount, status, isFulfilled) VALUES (?, ?, ?, ?, ?);";
+        try (Connection connection = MySQLConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(insertOrderSql, Statement.RETURN_GENERATED_KEYS)) {
+
+            preparedStatement.setLong(1, userId);
+            preparedStatement.setTimestamp(2, new Timestamp(new Date().getTime()));
+            preparedStatement.setBigDecimal(3, totalAmount);
+            preparedStatement.setString(4, status);
+            preparedStatement.setBoolean(5, false); // Assuming new orders are not fulfilled initially
 
             int affectedRows = preparedStatement.executeUpdate();
-
-            if (affectedRows > 0) {
-                // Retrieve the generated key for the orderId
-                try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        order.setOrderId(generatedKeys.getLong(1));
-                    } else {
-                        throw new SQLException("Creating order failed, no ID obtained.");
-                    }
-                }
+            if (affectedRows == 0) {
+                throw new SQLException("Creating order failed, no rows affected.");
             }
-        } catch (SQLException e) {
-            printSQLException(e);
+            return true;
         }
     }
 
-    // MODIFIED: Updated the method to include new fields totalAmount and status
-    public List<Order> getUserOrders(long userId) {
+    // This method retrieves all orders from the database
+    public List<Order> getAllOrders() throws SQLException {
+        // Unchanged code for retrieving all orders
         List<Order> orders = new ArrayList<>();
-        // Example implementation for retrieving orders by user ID
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_ORDERS_BY_USER_ID)) {
-            preparedStatement.setLong(1, userId);
-            ResultSet rs = preparedStatement.executeQuery();
-
+        String sql = "SELECT orderId, userId, orderDate, totalAmount, status, isFulfilled FROM orders";
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                long orderId = rs.getLong("orderId");
-                double totalAmount = rs.getDouble("totalAmount");
-                String status = rs.getString("status");
-                Date orderDate = new Date(rs.getTimestamp("orderDate").getTime());
-                boolean isFulfilled = rs.getBoolean("isFulfilled");
-                Order order = new Order(orderId, userId, orderDate, totalAmount, status, isFulfilled);
-                orders.add(order);
+                orders.add(new Order(rs.getLong("orderId"), rs.getLong("userId"), rs.getTimestamp("orderDate"),
+                        rs.getBigDecimal("totalAmount"), rs.getString("status"), rs.getBoolean("isFulfilled")));
             }
-        } catch (SQLException e) {
-            printSQLException(e);
         }
         return orders;
     }
 
-    // MODIFIED: Updated the method to include new fields totalAmount and status
-    public Order getOrderById(long orderId) {
+    // New method to retrieve an order by its ID, including its order items
+    public Order getOrderById(long orderId) throws SQLException {
         Order order = null;
-        // Example implementation for retrieving an order by its ID
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ORDER_BY_ID)) {
-            preparedStatement.setLong(1, orderId);
-            ResultSet rs = preparedStatement.executeQuery();
+        List<OrderItem> orderItems = new ArrayList<>();
+        String sql = "SELECT * FROM orders WHERE orderId = ?";
+        String itemsSql = "SELECT * FROM order_items WHERE orderId = ?";
 
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             PreparedStatement itemsStmt = conn.prepareStatement(itemsSql)) {
+
+            stmt.setLong(1, orderId);
+            ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                long userId = rs.getLong("userId");
-                double totalAmount = rs.getDouble("totalAmount");
-                String status = rs.getString("status");
-                Date orderDate = new Date(rs.getTimestamp("orderDate").getTime());
-                boolean isFulfilled = rs.getBoolean("isFulfilled");
-
-                order = new Order(orderId, userId, orderDate, totalAmount, status, isFulfilled);
+                order = new Order(rs.getLong("orderId"), rs.getLong("userId"), rs.getTimestamp("orderDate"),
+                        rs.getBigDecimal("totalAmount"), rs.getString("status"), rs.getBoolean("isFulfilled"));
             }
-        } catch (SQLException e) {
-            printSQLException(e);
+
+            itemsStmt.setLong(1, orderId);
+            ResultSet itemsRs = itemsStmt.executeQuery();
+            while (itemsRs.next()) {
+                OrderItem item = new OrderItem(itemsRs.getLong("orderItemId"), orderId,
+                        itemsRs.getLong("productId"), itemsRs.getInt("quantity"),
+                        itemsRs.getBigDecimal("price"));
+                orderItems.add(item);
+            }
+
+            if (order != null) {
+                order.setOrderItems(orderItems);
+            }
         }
         return order;
     }
 
-    // UNCHANGED: The printSQLException method remains the same
-    private void printSQLException(SQLException ex) {
-        for (Throwable e : ex) {
-            if (e instanceof SQLException) {
-                e.printStackTrace(System.err);
-                System.err.println("SQLState: " + ((SQLException) e).getSQLState());
-                System.err.println("Error Code: " + ((SQLException) e).getErrorCode());
-                System.err.println("Message: " + e.getMessage());
-                Throwable t = ex.getCause();
-                while (t != null) {
-                    System.out.println("Cause: " + t);
-                    t = t.getCause();
-                }
-            }
+    // Method to update an order's status and fulfillment
+    public boolean updateOrderStatus(long orderId, String status, boolean isFulfilled) throws SQLException {
+        // Unchanged code for updating order status
+        String sql = "UPDATE orders SET status = ?, isFulfilled = ? WHERE orderId = ?";
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, status);
+            stmt.setBoolean(2, isFulfilled);
+            stmt.setLong(3, orderId);
+
+            int affectedRows = stmt.executeUpdate();
+            return affectedRows > 0;
         }
     }
+
+    // Method to delete an order by its ID
+    public boolean deleteOrder(long orderId) throws SQLException {
+        // Unchanged code for deleting an order
+        String sql = "DELETE FROM orders WHERE orderId = ?";
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, orderId);
+
+            int affectedRows = stmt.executeUpdate();
+            return affectedRows > 0;
+        }
+    }
+
+    // Additional utility methods for order management could be added here
+    // For example, methods for handling order items, such as addOrderItem, updateOrderItem, deleteOrderItem, etc.
 }

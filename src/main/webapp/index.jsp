@@ -2,5 +2,5 @@
 <%@ page trimDirectiveWhitespaces="true"%>
 <%-- Forward to the servlet that handles product details --%>
 <%
-    response.sendRedirect(request.getContextPath() + "/product/details");
+    response.sendRedirect(request.getContextPath() + "/product/list");
 %>
