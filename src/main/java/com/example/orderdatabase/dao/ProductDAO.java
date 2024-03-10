@@ -1,5 +1,6 @@
 package com.example.orderdatabase.dao;
 
+import com.example.orderdatabase.database.MySQLConnection;
 import com.example.orderdatabase.model.Product;
 
 import java.sql.*;
@@ -7,75 +8,117 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProductDAO {
-
-    // A field to cache the total number of records. Initialized to -1 to indicate it's not loaded.
-    private int noOfRecords = -1;
+    private static final String INSERT_PRODUCT_SQL = "INSERT INTO products (productName, productDescription, price) VALUES (?, ?, ?);";
+    private static final String SELECT_PRODUCT_BY_ID = "SELECT productId, productName, productDescription, price FROM products WHERE productId = ?;";
+    private static final String SELECT_ALL_PRODUCTS = "SELECT productId, productName, productDescription, price FROM products;";
+    private static final String DELETE_PRODUCT_SQL = "DELETE FROM products WHERE productId = ?;";
+    private static final String UPDATE_PRODUCT_SQL = "UPDATE products SET productName = ?, productDescription = ?, price = ? WHERE productId = ?;";
 
     public ProductDAO() {
     }
 
-    protected Connection getConnection() {
-        Connection connection = null;
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            String jdbcPassword = "password";
-            String jdbcUsername = "root";
-            String jdbcURL = "jdbc:mysql://127.0.0.1:3306/orderdatabase";
-            connection = DriverManager.getConnection(jdbcURL, jdbcUsername, jdbcPassword);
-        } catch (SQLException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return connection;
-    }
+    public void insertProduct(Product product) throws SQLException {
+        try (Connection connection = MySQLConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PRODUCT_SQL, Statement.RETURN_GENERATED_KEYS)) {
 
-    // Other CRUD operations methods like insertProduct, selectProduct, updateProduct, deleteProduct
+            preparedStatement.setString(1, product.getProductName());
+            preparedStatement.setString(2, product.getProductDescription());
+            preparedStatement.setDouble(3, product.getPrice());
 
-    public List<Product> selectProducts(int offset, int recordsPerPage) {
-        List<Product> products = new ArrayList<>();
-        String query = "SELECT * FROM products LIMIT ?, ?";
-
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setInt(1, offset);
-            preparedStatement.setInt(2, recordsPerPage);
-
-            try (ResultSet rs = preparedStatement.executeQuery()) {
-                while (rs.next()) {
-                    long id = rs.getLong("productId");
-                    String name = rs.getString("productName");
-                    String description = rs.getString("productDescription");
-                    double price = rs.getDouble("price");
-                    boolean inStock = rs.getBoolean("inStock");
-                    Timestamp createdAt = rs.getTimestamp("createdAt");
-                    Timestamp updatedAt = rs.getTimestamp("updatedAt");
-
-                    products.add(new Product(id, name, description, price, inStock, createdAt, updatedAt));
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        product.setProductId(generatedKeys.getLong(1));
+                    }
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            printSQLException(e);
+            throw e;
+        }
+    }
+
+    public Product selectProduct(long productId) throws SQLException {
+        Product product = null;
+        try (Connection connection = MySQLConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_PRODUCT_BY_ID)) {
+            preparedStatement.setLong(1, productId);
+
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+                if (rs.next()) {
+                    String productName = rs.getString("productName");
+                    String productDescription = rs.getString("productDescription");
+                    double price = rs.getDouble("price");
+                    product = new Product(productId, productName, productDescription, price);
+                }
+            }
+        } catch (SQLException e) {
+            printSQLException(e);
+            throw e;
+        }
+        return product;
+    }
+
+    public List<Product> selectAllProducts() throws SQLException {
+        List<Product> products = new ArrayList<>();
+        try (Connection connection = MySQLConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_PRODUCTS)) {
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+                while (rs.next()) {
+                    long productId = rs.getLong("productId");
+                    String productName = rs.getString("productName");
+                    String productDescription = rs.getString("productDescription");
+                    double price = rs.getDouble("price");
+                    products.add(new Product(productId, productName, productDescription, price));
+                }
+            }
+        } catch (SQLException e) {
+            printSQLException(e);
+            throw e;
         }
         return products;
     }
 
-    public void loadTotalRecordsCount() {
-        String query = "SELECT COUNT(*) FROM orderdatabase.products";
-
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query);
-             ResultSet rs = preparedStatement.executeQuery()) {
-            if (rs.next()) {
-                this.noOfRecords = rs.getInt(1);
-            }
+    public void deleteProduct(long productId) throws SQLException {
+        try (Connection connection = MySQLConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(DELETE_PRODUCT_SQL)) {
+            statement.setLong(1, productId);
+            statement.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            printSQLException(e);
+            throw e;
         }
     }
 
-    public int getNoOfRecords() {
-        if (this.noOfRecords == -1) {
-            loadTotalRecordsCount();
+    public void updateProduct(Product product) throws SQLException {
+        try (Connection connection = MySQLConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(UPDATE_PRODUCT_SQL)) {
+            statement.setString(1, product.getProductName());
+            statement.setString(2, product.getProductDescription());
+            statement.setDouble(3, product.getPrice());
+            statement.setLong(4, product.getProductId());
+
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            printSQLException(e);
+            throw e;
         }
-        return noOfRecords;
+    }
+
+    private void printSQLException(SQLException ex) {
+        for (Throwable e : ex) {
+            if (e instanceof SQLException) {
+                e.printStackTrace(System.err);
+                System.err.println("SQLState: " + ((SQLException) e).getSQLState());
+                System.err.println("Error Code: " + ((SQLException) e).getErrorCode());
+                System.err.println("Message: " + e.getMessage());
+                Throwable t = ex.getCause();
+                while (t != null) {
+                    System.out.println("Cause: " + t);
+                    t = t.getCause();
+                }
+            }
+        }
     }
 }
