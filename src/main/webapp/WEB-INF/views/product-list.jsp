@@ -49,30 +49,29 @@
         }
 
         function placeOrder(productId, price) {
-            <% if (session != null && session.getAttribute("user") != null) { %>
-            var userId = <%= ((User) session.getAttribute("user")).getId() %>;
-            $.ajax({
-                url: '<%=request.getContextPath()%>/order/insert',
-                type: 'POST',
-                data: {
-                    userId: userId,
-                    productId: productId,
-                    price: price,
-                    quantity: 1 // This example assumes a quantity of 1; adjust as needed
-                },
-                success: function(response) {
-                    alert('Your order has been placed successfully!');
-                    window.location.reload(); // Reload the page to refresh the state
-                },
-                error: function() {
-                    alert('There was an error placing your order. Please try again.');
-                }
-            });
-            <% } else { %>
-            // User is not logged in or session has expired
-            alert('Your session has expired. Please log in again.');
-            window.location.href = '<%=request.getContextPath()%>/login';
-            <% } %>
+            var userId = <%= (session != null && session.getAttribute("user") != null) ? ((User) session.getAttribute("user")).getId() : "null" %>;
+            if (userId != null) {
+                $.ajax({
+                    url: '<%=request.getContextPath()%>/order/insertWithItem', // This matches the servlet URL pattern for inserting order with item
+                    type: 'POST',
+                    data: {
+                        userId: userId,
+                        productId: productId,
+                        price: price,
+                        quantity: 1 // Adjust the quantity as needed
+                    },
+                    success: function(response) {
+                        alert('Your order has been placed successfully!');
+                        window.location.reload(); // Reload the page to refresh the state
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        alert('There was an error placing your order: ' + textStatus + ', ' + errorThrown);
+                    }
+                });
+            } else {
+                alert('Your session has expired. Please log in again.');
+                window.location.href = '<%=request.getContextPath()%>/login';
+            }
         }
 
         // On page load, check if we have an orderProductId stored from a previous session (pre-login)
