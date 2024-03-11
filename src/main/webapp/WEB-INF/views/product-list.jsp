@@ -2,6 +2,7 @@
 <%@ page import="java.util.List"%>
 <%@ page import="com.example.orderdatabase.model.Product"%>
 <%@ page import="jakarta.servlet.http.HttpSession"%>
+<%@ page import="com.example.orderdatabase.model.User"%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,10 +13,10 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
         function handleOrder(productId) {
-            <% HttpSession sessionCurrent = request.getSession(false); %>
-            <% if (sessionCurrent != null && sessionCurrent.getAttribute("user") != null) { %>
+            <% HttpSession sessionLive = request.getSession(false); %>
+            <% if (sessionLive != null && sessionLive.getAttribute("user") != null) { %>
             // User is logged in, proceed to confirm the order
-            confirmOrder(productId);
+            fetchProductDetailsAndConfirmOrder(productId);
             <% } else { %>
             // User is not logged in, store the product ID and redirect to login
             sessionStorage.setItem('orderProductId', productId);
@@ -23,17 +24,63 @@
             <% } %>
         }
 
-        function confirmOrder(productId) {
-            // Placeholder for your confirm order logic
-            alert('Implement product order confirmation logic for product ID: ' + productId);
+        function fetchProductDetailsAndConfirmOrder(productId) {
+            $.ajax({
+                url: '<%=request.getContextPath()%>/productDetail',
+                type: 'GET',
+                data: { productId: productId },
+                success: function(product) {
+                    var orderConfirmation = confirm(
+                        "Product ID: " + product.productId + "\n" +
+                        "Product Name: " + product.productName + "\n" +
+                        "Description: " + product.productDescription + "\n" +
+                        "Price: $" + product.price.toFixed(2) + "\n\n" +
+                        "Do you want to confirm the order?"
+                    );
+                    if (orderConfirmation) {
+                        // If the user confirms, proceed to place the order
+                        placeOrder(productId, product.price);
+                    }
+                },
+                error: function() {
+                    alert('There was an error fetching product details. Please try again.');
+                }
+            });
         }
 
+        function placeOrder(productId, price) {
+            <% if (session != null && session.getAttribute("user") != null) { %>
+            var userId = <%= ((User) session.getAttribute("user")).getId() %>;
+            $.ajax({
+                url: '<%=request.getContextPath()%>/order/insert',
+                type: 'POST',
+                data: {
+                    userId: userId,
+                    productId: productId,
+                    price: price,
+                    quantity: 1 // This example assumes a quantity of 1; adjust as needed
+                },
+                success: function(response) {
+                    alert('Your order has been placed successfully!');
+                    window.location.reload(); // Reload the page to refresh the state
+                },
+                error: function() {
+                    alert('There was an error placing your order. Please try again.');
+                }
+            });
+            <% } else { %>
+            // User is not logged in or session has expired
+            alert('Your session has expired. Please log in again.');
+            window.location.href = '<%=request.getContextPath()%>/login';
+            <% } %>
+        }
+
+        // On page load, check if we have an orderProductId stored from a previous session (pre-login)
         $(document).ready(function() {
-            // Automatically try to confirm an order if a product ID is saved
             var productId = sessionStorage.getItem('orderProductId');
             if (productId) {
                 sessionStorage.removeItem('orderProductId'); // Clear the stored ID
-                confirmOrder(productId);
+                handleOrder(productId); // This will now fetch product details and proceed to order
             }
         });
     </script>
@@ -63,7 +110,7 @@
             <td><%= product.getProductDescription() %></td>
             <td>$<%= String.format("%.2f", product.getPrice()) %></td>
             <td>
-                <button onclick="handleOrder('<%= product.getProductId() %>')" class="btn btn-primary">Order</button>
+                <button onclick="handleOrder(<%= product.getProductId() %>)" class="btn btn-primary">Order</button>
             </td>
         </tr>
         <%

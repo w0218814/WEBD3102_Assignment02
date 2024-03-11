@@ -101,6 +101,67 @@ public class OrderDAO {
             return affectedRows > 0;
         }
     }
+    // Method in OrderDAO to add an order with items
+    public long addOrderWithItems(long userId, BigDecimal price, long productId, int quantity) throws SQLException {
+        Connection connection = null;
+        PreparedStatement orderStmt = null;
+        PreparedStatement itemStmt = null;
+        ResultSet generatedKeys = null;
+        long orderId = -1;
+
+        try {
+            connection = MySQLConnection.getConnection();
+            connection.setAutoCommit(false); // Start transaction
+
+            // Insert the order
+            String insertOrderSql = "INSERT INTO orders (userId, orderDate, totalAmount, status, isFulfilled) VALUES (?, NOW(), ?, 'Pending', FALSE);";
+            orderStmt = connection.prepareStatement(insertOrderSql, Statement.RETURN_GENERATED_KEYS);
+            orderStmt.setLong(1, userId);
+            orderStmt.setBigDecimal(2, price.multiply(new BigDecimal(quantity))); // Assuming price is per item
+            int affectedRows = orderStmt.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("Creating order failed, no rows affected.");
+            }
+
+            generatedKeys = orderStmt.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                orderId = generatedKeys.getLong(1);
+            } else {
+                throw new SQLException("Creating order failed, no ID obtained.");
+            }
+
+            // Insert the order item
+            String insertItemSql = "INSERT INTO order_items (orderId, productId, quantity, price) VALUES (?, ?, ?, ?);";
+            itemStmt = connection.prepareStatement(insertItemSql);
+            itemStmt.setLong(1, orderId);
+            itemStmt.setLong(2, productId);
+            itemStmt.setInt(3, quantity);
+            itemStmt.setBigDecimal(4, price);
+            itemStmt.executeUpdate();
+
+            connection.commit(); // Commit transaction
+        } catch (SQLException ex) {
+            // Roll back the transaction
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException e2) {
+                    e2.printStackTrace();
+                }
+            }
+            // Re-throw the exception to be handled above
+            throw ex;
+        } finally {
+            // Clean up JDBC resources
+            if (generatedKeys != null) try { generatedKeys.close(); } catch (SQLException e) { e.printStackTrace(); }
+            if (itemStmt != null) try { itemStmt.close(); } catch (SQLException e) { e.printStackTrace(); }
+            if (orderStmt != null) try { orderStmt.close(); } catch (SQLException e) { e.printStackTrace(); }
+            if (connection != null) try { connection.close(); } catch (SQLException e) { e.printStackTrace(); }
+        }
+
+        return orderId;
+    }
 
     // Method to delete an order by its ID
     public boolean deleteOrder(long orderId) throws SQLException {

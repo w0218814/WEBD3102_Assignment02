@@ -58,6 +58,9 @@ public class OrderServlet extends HttpServlet {
                 case "/update":
                     updateOrder(request, response);
                     break;
+                case "/insertWithItem":
+                    insertOrderWithItem(request, response);
+                    break;
                 case "/delete":
                     deleteOrder(request, response);
                     break;
@@ -108,5 +111,23 @@ public class OrderServlet extends HttpServlet {
         response.sendRedirect("list");
     }
 
-    // Additional methods to support order management can be implemented here
+    private void insertOrderWithItem(HttpServletRequest request, HttpServletResponse response) throws IOException, SQLException {
+        // Retrieve user and product details from request
+        long userId = Long.parseLong(request.getParameter("userId"));
+        long productId = Long.parseLong(request.getParameter("productId"));
+        BigDecimal price = new BigDecimal(request.getParameter("price"));
+        int quantity = Integer.parseInt(request.getParameter("quantity")); // Assuming quantity is being sent
+
+        // Insert the order and order item using a new method in OrderDAO
+        long orderId = orderDAO.addOrderWithItems(userId, price, productId, quantity);
+
+        // Prepare response
+        if (orderId > 0) {
+            response.getWriter().write("Order placed successfully with Order ID: " + orderId);
+            response.setStatus(HttpServletResponse.SC_OK);
+        } else {
+            response.getWriter().write("Failed to place order.");
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
