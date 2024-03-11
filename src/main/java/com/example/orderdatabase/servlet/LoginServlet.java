@@ -26,8 +26,7 @@ public class LoginServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
 
@@ -37,21 +36,26 @@ public class LoginServlet extends HttpServlet {
                 HttpSession session = request.getSession();
                 session.setAttribute("user", user);
 
-                // Redirect to OrderForm.jsp if there's a pending order
-                Long pendingProductId = (Long) session.getAttribute("pendingProductId");
+                // Check for pendingProductId and redirect appropriately
+                String pendingProductId = (String) session.getAttribute("pendingProductId");
                 if (pendingProductId != null) {
-                    // Remove pendingProductId from session to clean up
+                    // Remove the attribute to clean up the session
                     session.removeAttribute("pendingProductId");
-                    response.sendRedirect(request.getContextPath() + "/orderForm.jsp?productId=" + pendingProductId);
+                    // Redirect to an intermediate page or servlet that confirms the order
+                    // This could redirect to the product list with a flag indicating an order confirmation is needed.
+                    response.sendRedirect(request.getContextPath() + "/product-list.jsp?confirmOrder=" + pendingProductId);
                 } else {
-                    // Default redirection if no pending product
-                    response.sendRedirect(request.getContextPath() + "/defaultRedirectPage.jsp");
+                    // No pending product, redirect to a default or home page
+                    response.sendRedirect(request.getContextPath() + "/product/list"); // Adjust the redirection as needed.
                 }
             } else {
-                response.sendRedirect(request.getContextPath() + "/login?error=Invalid credentials");
+                // Set error message and forward back to the login page
+                request.setAttribute("errorMessage", "Invalid Username or Password");
+                request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
             }
         } catch (Exception e) {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "An error occurred during login.");
+            throw new ServletException("Login failed due to an error: " + e.getMessage(), e);
         }
     }
+
 }

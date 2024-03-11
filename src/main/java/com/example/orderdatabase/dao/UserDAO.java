@@ -20,14 +20,15 @@ public class UserDAO {
 
     // Insert a new user
 // In UserDAO.java
-    public void insertUser(User user, String hashedPassword, int roleId) throws SQLException {
+    public void insertUser(User user, String hashedPassword) throws SQLException {
         try (Connection connection = MySQLConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_USERS_SQL, Statement.RETURN_GENERATED_KEYS)) {
             preparedStatement.setString(1, user.getUsername());
             preparedStatement.setString(2, hashedPassword);
             preparedStatement.setString(3, user.getFullName());
             preparedStatement.setString(4, user.getEmail());
-            preparedStatement.setInt(5, roleId); // Now the roleId is accepted as a parameter
+            // Set the default role ID to 2 directly here, assuming your schema allows for it
+            preparedStatement.setInt(5, 2);
             preparedStatement.setString(6, user.getStreet());
             preparedStatement.setString(7, user.getCity());
             preparedStatement.setString(8, user.getNearbyLandmark());
@@ -73,6 +74,7 @@ public class UserDAO {
 
 
     // Select a user by ID
+    // Select a user by ID
     public User selectUserById(long id) throws SQLException {
         User user = null;
         try (Connection connection = MySQLConnection.getConnection();
@@ -85,7 +87,6 @@ public class UserDAO {
                 String username = rs.getString("username");
                 String fullName = rs.getString("fullName");
                 String email = rs.getString("email");
-                int roleId = rs.getInt("roleId");
                 String street = rs.getString("street");
                 String city = rs.getString("city");
                 String nearbyLandmark = rs.getString("nearbyLandmark");
@@ -93,7 +94,8 @@ public class UserDAO {
                 String postalCode = rs.getString("postalCode");
                 String phoneNumber = rs.getString("phoneNumber");
 
-                user = new User(userId, username, fullName, email, roleId, street, city, nearbyLandmark, province, postalCode, phoneNumber);
+                // roleId is not used as it's set by default in the User class
+                user = new User(userId, username, fullName, email, street, city, nearbyLandmark, province, postalCode, phoneNumber);
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -102,6 +104,8 @@ public class UserDAO {
         return user;
     }
 
+
+    // Select all users
     // Select all users
     public List<User> selectAllUsers() throws SQLException {
         List<User> users = new ArrayList<>();
@@ -114,15 +118,15 @@ public class UserDAO {
                 String username = rs.getString("username");
                 String fullName = rs.getString("fullName");
                 String email = rs.getString("email");
-                int roleId = rs.getInt("roleId");
                 String street = rs.getString("street");
                 String city = rs.getString("city");
                 String nearbyLandmark = rs.getString("nearbyLandmark");
                 String province = rs.getString("province");
                 String postalCode = rs.getString("postalCode");
                 String phoneNumber = rs.getString("phoneNumber");
-
-                users.add(new User(userId, username, fullName, email, roleId, street, city, nearbyLandmark, province, postalCode, phoneNumber));
+                // Create a new User object using the constructor without roleId as it defaults to 2
+                User user = new User(userId, username, fullName, email, street, city, nearbyLandmark, province, postalCode, phoneNumber);
+                users.add(user);
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -131,7 +135,7 @@ public class UserDAO {
         return users;
     }
 
-    // Delete a user
+        // Delete a user
     public boolean deleteUser(long id) throws SQLException {
         boolean rowDeleted;
         try (Connection connection = MySQLConnection.getConnection();
@@ -175,7 +179,6 @@ public class UserDAO {
                 long userId = rs.getLong("id");
                 String fullName = rs.getString("fullName");
                 String email = rs.getString("email");
-                int roleId = rs.getInt("roleId");
                 String street = rs.getString("street");
                 String city = rs.getString("city");
                 String nearbyLandmark = rs.getString("nearbyLandmark");
@@ -183,13 +186,15 @@ public class UserDAO {
                 String postalCode = rs.getString("postalCode");
                 String phoneNumber = rs.getString("phoneNumber");
 
-                user = new User(userId, username, fullName, email, roleId, street, city, nearbyLandmark, province, postalCode, phoneNumber);
+                // roleId is not needed as a parameter here since it defaults to 2 in the User constructor
+                user = new User(userId, username, fullName, email, street, city, nearbyLandmark, province, postalCode, phoneNumber);
             }
         } catch (SQLException e) {
             printSQLException(e);
         }
         return user;
     }
+
 
     // Print SQLException for troubleshooting
     private void printSQLException(SQLException ex) {

@@ -73,28 +73,26 @@ public class AdminServlet extends HttpServlet {
         String password = request.getParameter("password");
         String fullName = request.getParameter("fullName");
         String email = request.getParameter("email");
-        String roleName = request.getParameter("roleName");
-
-        int roleId = convertRoleNameToRoleId(roleName);
 
         // Ensure the password is not null before attempting to hash it
         String hashedPassword = (password != null && !password.trim().isEmpty()) ? BCrypt.hashpw(password, BCrypt.gensalt()) : null;
 
-        // Assuming your User model can handle a null password or you ensure hashedPassword is not null before proceeding
-        User user = new User(username, fullName, email); // Here we use the constructor with three parameters
-        // The rest of your logic for inserting or updating the user
-
+        User user;
         if (id == null || id.isEmpty()) {
             // New user registration
+            user = new User(username, fullName, email); // roleId is already set to 2 in the User constructor
             if (hashedPassword != null) { // Ensure hashedPassword is not null
-                userDAO.insertUser(user, hashedPassword, roleId);
+                userDAO.insertUser(user, hashedPassword); // roleId is now part of the user object
             } else {
                 // Handle the case where the password is null
                 // You might want to log an error or return an error message to the user
             }
         } else {
             // User update
-            user.setId(Long.parseLong(id));
+            user = userDAO.selectUserById(Long.parseLong(id)); // Retrieve the existing user from the database
+            user.setUsername(username);
+            user.setFullName(fullName);
+            user.setEmail(email);
             if (hashedPassword != null) {
                 // Update the user's password only if a new password is provided
                 userDAO.updatePassword(user.getId(), hashedPassword);
@@ -106,14 +104,5 @@ public class AdminServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/admin/userList");
     }
 
-    private int convertRoleNameToRoleId(String roleName) {
-        // Example conversion logic. Adjust according to your actual role IDs.
-        switch (roleName) {
-            case "admin":
-                return 1;
-            case "user":
-            default:
-                return 2;
-        }
-    }
 }
+

@@ -9,11 +9,9 @@ public class User implements Serializable {
 
     private long id;
     private String username;
-    private String password; // Assume that we store password hash
     private String fullName;
     private String email;
-    private int roleId; // Assuming the role ID is an integer
-    // New fields
+    private int roleId = 2; // Default role set to 2
     private String street;
     private String city;
     private String nearbyLandmark;
@@ -24,44 +22,34 @@ public class User implements Serializable {
     // Default constructor
     public User() {}
 
-    // Constructor with username, fullName, and email only
+    // Constructor for username, fullName, email (and potentially other fields without roleId)
     public User(String username, String fullName, String email) {
         this.username = username;
         this.fullName = fullName;
         this.email = email;
-        // The following fields are initialized with default values, update as necessary
-        this.street = "";
-        this.city = "";
-        this.nearbyLandmark = "";
-        this.province = "";
-        this.postalCode = "";
-        this.phoneNumber = "";
-        this.roleId = 2; // Default role, you might need to adjust this
     }
 
-    // Full constructor
-    public User(long id, String username, String fullName, String email, int roleId, String street, String city, String nearbyLandmark, String province, String postalCode, String phoneNumber) {
+    // New constructor that includes all parameters
+    public User(long id, String username, String fullName, String email, String street, String city, String nearbyLandmark, String province, String postalCode, String phoneNumber) {
         this.id = id;
         this.username = username;
         this.fullName = fullName;
         this.email = email;
-        this.roleId = roleId;
         this.street = street;
         this.city = city;
         this.nearbyLandmark = nearbyLandmark;
         this.province = province;
         this.postalCode = postalCode;
         this.phoneNumber = phoneNumber;
-    }
+        this.roleId = 2; // roleId set to 2 by default
 
-    // Getters and setters for all fields, including new ones
+        }
 
+    // Getters and setters for all fields
     public long getId() { return id; }
     public void setId(long id) { this.id = id; }
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
     public String getEmail() { return email; }
@@ -81,8 +69,7 @@ public class User implements Serializable {
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
 
-    // equals, hashCode, and toString methods
-
+    // equals, hashCode, and toString implementations
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -90,20 +77,20 @@ public class User implements Serializable {
         User user = (User) o;
         return getId() == user.getId() &&
                 getRoleId() == user.getRoleId() &&
-                getUsername().equals(user.getUsername()) &&
-                getFullName().equals(user.getFullName()) &&
-                getEmail().equals(user.getEmail()) &&
-                getStreet().equals(user.getStreet()) &&
-                getCity().equals(user.getCity()) &&
-                getNearbyLandmark().equals(user.getNearbyLandmark()) &&
-                getProvince().equals(user.getProvince()) &&
-                getPostalCode().equals(user.getPostalCode()) &&
-                getPhoneNumber().equals(user.getPhoneNumber());
+                Objects.equals(getUsername(), user.getUsername()) &&
+                Objects.equals(getFullName(), user.getFullName()) &&
+                Objects.equals(getEmail(), user.getEmail()) &&
+                Objects.equals(getStreet(), user.getStreet()) &&
+                Objects.equals(getCity(), user.getCity()) &&
+                Objects.equals(getNearbyLandmark(), user.getNearbyLandmark()) &&
+                Objects.equals(getProvince(), user.getProvince()) &&
+                Objects.equals(getPostalCode(), user.getPostalCode()) &&
+                Objects.equals(getPhoneNumber(), user.getPhoneNumber());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getUsername(), getPassword(), getFullName(), getEmail(), getRoleId(), getStreet(), getCity(), getNearbyLandmark(), getProvince(), getPostalCode(), getPhoneNumber());
+        return Objects.hash(getId(), getUsername(), getFullName(), getEmail(), getRoleId(), getStreet(), getCity(), getNearbyLandmark(), getProvince(), getPostalCode(), getPhoneNumber());
     }
 
     @Override
@@ -111,7 +98,6 @@ public class User implements Serializable {
         return "User{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
-                ", password='" + password + '\'' + // Remember to handle with care to not expose the password hash
                 ", fullName='" + fullName + '\'' +
                 ", email='" + email + '\'' +
                 ", roleId=" + roleId +
