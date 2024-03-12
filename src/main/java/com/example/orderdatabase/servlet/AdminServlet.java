@@ -27,23 +27,36 @@ public class AdminServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getPathInfo();
         try {
-            if ("/editUser".equals(action)) {
-                editUser(request, response);
-            } else {
-                showUserList(request, response);
+            if (action == null) action = "/listUsers"; // default action
+            switch (action) {
+                case "/listUsers":
+                    showUserList(request, response);
+                    break;
+                case "/editUser":
+                    editUser(request, response);
+                    break;
+                case "/adminConsole":
+                    request.getRequestDispatcher("/WEB-INF/views/adminConsole.jsp").forward(request, response);
+                    break;
             }
         } catch (SQLException ex) {
             throw new ServletException("Database error occurred", ex);
         }
     }
 
-    private void editUser(HttpServletRequest request, HttpServletResponse response) throws SQLException, ServletException, IOException {
-        String userId = request.getParameter("userId");
-        if (userId != null && !userId.isEmpty()) {
-            User existingUser = userDAO.selectUserById(Long.parseLong(userId));
-            request.setAttribute("user", existingUser);
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String action = request.getPathInfo();
+        try {
+            switch (action) {
+                case "/register":
+                    insertOrUpdateUser(request, response);
+                    break;
+                // Add more cases if necessary for other POST actions
+            }
+        } catch (SQLException ex) {
+            throw new ServletException("Database error occurred", ex);
         }
-        showUserList(request, response);
     }
 
     private void showUserList(HttpServletRequest request, HttpServletResponse response) throws SQLException, ServletException, IOException {
@@ -53,56 +66,48 @@ public class AdminServlet extends HttpServlet {
         dispatcher.forward(request, response);
     }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String action = request.getPathInfo();
-        try {
-            if ("/register".equals(action)) {
-                insertOrUpdateUser(request, response);
-            }
-            // Handle other post actions if necessary
-        } catch (SQLException ex) {
-            throw new ServletException("Database error occurred", ex);
-        }
+    private void editUser(HttpServletRequest request, HttpServletResponse response) throws SQLException, ServletException, IOException {
+        long userId = Long.parseLong(request.getParameter("userId"));
+        User existingUser = userDAO.selectUserById(userId);
+        request.setAttribute("user", existingUser);
+        showUserList(request, response);
     }
 
     private void insertOrUpdateUser(HttpServletRequest request, HttpServletResponse response)
-            throws SQLException, IOException {
+            throws SQLException, IOException, ServletException {
         String id = request.getParameter("id");
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String fullName = request.getParameter("fullName");
         String email = request.getParameter("email");
+        // Retrieve role from the request, with a default value for regular users
+        int roleId = Integer.parseInt(request.getParameter("role") != null ? request.getParameter("role") : "2");
 
-        // Ensure the password is not null before attempting to hash it
         String hashedPassword = (password != null && !password.trim().isEmpty()) ? BCrypt.hashpw(password, BCrypt.gensalt()) : null;
 
         User user;
         if (id == null || id.isEmpty()) {
             // New user registration
-            user = new User(username, fullName, email); // roleId is already set to 2 in the User constructor
-            if (hashedPassword != null) { // Ensure hashedPassword is not null
-                userDAO.insertUser(user, hashedPassword); // roleId is now part of the user object
-            } else {
-                // Handle the case where the password is null
-                // You might want to log an error or return an error message to the user
+            user = new User(username, fullName, email); // Initialize with other parameters as needed
+            if (hashedPassword != null) {
+                userDAO.insertUser(user, hashedPassword, roleId); // Pass roleId here
             }
         } else {
-            // User update
-            user = userDAO.selectUserById(Long.parseLong(id)); // Retrieve the existing user from the database
+            // Update existing user
+            user = userDAO.selectUserById(Long.parseLong(id));
             user.setUsername(username);
             user.setFullName(fullName);
             user.setEmail(email);
+            // Set other fields on the user object as necessary
+
             if (hashedPassword != null) {
-                // Update the user's password only if a new password is provided
                 userDAO.updatePassword(user.getId(), hashedPassword);
             }
-            // Update the rest of the user's information
             userDAO.updateUser(user);
         }
-        // Redirect or forward to the appropriate page
-        response.sendRedirect(request.getContextPath() + "/admin/userList");
+        response.sendRedirect(request.getContextPath() + "/admin/listUsers");
     }
 
-}
 
+    // ...
+}

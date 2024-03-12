@@ -36,20 +36,19 @@ public class LoginServlet extends HttpServlet {
                 HttpSession session = request.getSession();
                 session.setAttribute("user", user);
 
-                // Check for pendingProductId and redirect appropriately
-                String pendingProductId = (String) session.getAttribute("pendingProductId");
-                if (pendingProductId != null) {
-                    // Remove the attribute to clean up the session
-                    session.removeAttribute("pendingProductId");
-                    // Redirect to an intermediate page or servlet that confirms the order
-                    // This could redirect to the product list with a flag indicating an order confirmation is needed.
-                    response.sendRedirect(request.getContextPath() + "/product-list.jsp?confirmOrder=" + pendingProductId);
+                if (user.getRoleId() == 1) { // Assuming 1 is the roleId for admin
+                    response.sendRedirect(request.getContextPath() + "/admin/adminConsole"); // Redirect to admin console
                 } else {
-                    // No pending product, redirect to a default or home page
-                    response.sendRedirect(request.getContextPath() + "/product/list"); // Adjust the redirection as needed.
+                    // For regular users
+                    String pendingProductId = (String) session.getAttribute("pendingProductId");
+                    if (pendingProductId != null) {
+                        session.removeAttribute("pendingProductId");
+                        response.sendRedirect(request.getContextPath() + "/product/list?confirmOrder=" + pendingProductId);
+                    } else {
+                        response.sendRedirect(request.getContextPath() + "/product/list");
+                    }
                 }
             } else {
-                // Set error message and forward back to the login page
                 request.setAttribute("errorMessage", "Invalid Username or Password");
                 request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
             }

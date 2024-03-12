@@ -83,7 +83,6 @@ public class UserServlet extends HttpServlet {
         newUser.setUsername(username);
         newUser.setFullName(fullName);
         newUser.setEmail(email);
-        // Set default roleId in User object constructor or here
         newUser.setStreet(street);
         newUser.setCity(city);
         newUser.setNearbyLandmark(nearbyLandmark);
@@ -91,8 +90,11 @@ public class UserServlet extends HttpServlet {
         newUser.setPostalCode(postalCode);
         newUser.setPhoneNumber(phoneNumber);
 
+        // The default role ID for regular users, change as per your role system
+        int defaultRoleId = 2;
+
         // Insert the new user into the database
-        userDAO.insertUser(newUser, hashedPassword); // Make sure this method in UserDAO accepts a User object with all these fields
+        userDAO.insertUser(newUser, hashedPassword, defaultRoleId);
 
         // Redirect to login page or a confirmation page
         response.sendRedirect(request.getContextPath() + "/user/login");

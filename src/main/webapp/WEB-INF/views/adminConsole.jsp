@@ -25,12 +25,12 @@
         session.removeAttribute("updateMessage");
     %>
     <% } %>
-    <p>Welcome to the Admin Console! Here, you can manage users, roles, and other administrative tasks.</p>
+    <p>Welcome to the Admin Console! Here, you can manage users, orders, and other administrative tasks.</p>
 
     <!-- Links for admin tasks -->
     <div class="list-group">
-        <a href="<%= request.getContextPath() %>/admin/register" class="list-group-item list-group-item-action">Manage Users</a> <!-- Link to manage users -->
-        <a href="<%= request.getContextPath() %>/todo/list" class="list-group-item list-group-item-action">Manage Todo Lists</a> <!-- Link to manage todo lists -->
+        <a href="<%= request.getContextPath() %>/admin/editUser" class="list-group-item list-group-item-action">Manage Users</a> <!-- Link to manage users -->
+        <a href="<%= request.getContextPath() %>/order/list" class="list-group-item list-group-item-action">Manage Orders</a> <!-- Link to manage orders -->
     </div>
 </div>
 

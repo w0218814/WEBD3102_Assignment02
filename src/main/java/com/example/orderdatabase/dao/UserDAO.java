@@ -19,16 +19,15 @@ public class UserDAO {
     public UserDAO() {}
 
     // Insert a new user
-// In UserDAO.java
-    public void insertUser(User user, String hashedPassword) throws SQLException {
+
+    public void insertUser(User user, String hashedPassword, int roleId) throws SQLException {
         try (Connection connection = MySQLConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_USERS_SQL, Statement.RETURN_GENERATED_KEYS)) {
             preparedStatement.setString(1, user.getUsername());
             preparedStatement.setString(2, hashedPassword);
             preparedStatement.setString(3, user.getFullName());
             preparedStatement.setString(4, user.getEmail());
-            // Set the default role ID to 2 directly here, assuming your schema allows for it
-            preparedStatement.setInt(5, 2);
+            preparedStatement.setInt(5, roleId); // Use the provided roleId
             preparedStatement.setString(6, user.getStreet());
             preparedStatement.setString(7, user.getCity());
             preparedStatement.setString(8, user.getNearbyLandmark());
@@ -185,10 +184,12 @@ public class UserDAO {
                 String province = rs.getString("province");
                 String postalCode = rs.getString("postalCode");
                 String phoneNumber = rs.getString("phoneNumber");
+                int roleId = rs.getInt("roleId");
 
-                // roleId is not needed as a parameter here since it defaults to 2 in the User constructor
                 user = new User(userId, username, fullName, email, street, city, nearbyLandmark, province, postalCode, phoneNumber);
+                user.setRoleId(roleId); // Make sure this setter correctly sets the roleId in the User object
             }
+
         } catch (SQLException e) {
             printSQLException(e);
         }

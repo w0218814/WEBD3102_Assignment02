@@ -50,7 +50,7 @@
             <label for="phoneNumber">Phone Number:</label>
             <input type="text" class="form-control" id="phoneNumber" name="phoneNumber" required>
         </div>
-        <!-- Hidden field for roleId, since it's set to 2 by default in the User model -->
+        <!-- Hidden field for roleId, since it's set to 2 by default for all new registrations here -->
         <input type="hidden" id="roleId" name="roleId" value="2">
         <button type="submit" class="btn btn-primary">Register</button>
     </form>

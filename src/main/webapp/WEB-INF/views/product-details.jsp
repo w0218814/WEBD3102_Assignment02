@@ -1,5 +1,6 @@
 <%@ page import="com.example.orderdatabase.model.Product" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+
 <html>
 <head>
     <title>Product Details</title>

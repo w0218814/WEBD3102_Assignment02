@@ -11,7 +11,7 @@ public class User implements Serializable {
     private String username;
     private String fullName;
     private String email;
-    private int roleId = 2; // Default role set to 2
+    private int roleId; // No default value set
     private String street;
     private String city;
     private String nearbyLandmark;
@@ -22,14 +22,15 @@ public class User implements Serializable {
     // Default constructor
     public User() {}
 
-    // Constructor for username, fullName, email (and potentially other fields without roleId)
+    // Constructor for username, fullName, email
     public User(String username, String fullName, String email) {
         this.username = username;
         this.fullName = fullName;
         this.email = email;
+        // RoleId must be set explicitly elsewhere
     }
 
-    // New constructor that includes all parameters
+    // New constructor that includes all parameters, except for roleId
     public User(long id, String username, String fullName, String email, String street, String city, String nearbyLandmark, String province, String postalCode, String phoneNumber) {
         this.id = id;
         this.username = username;
@@ -41,9 +42,8 @@ public class User implements Serializable {
         this.province = province;
         this.postalCode = postalCode;
         this.phoneNumber = phoneNumber;
-        this.roleId = 2; // roleId set to 2 by default
-
-        }
+        // RoleId must be set explicitly elsewhere
+    }
 
     // Getters and setters for all fields
     public long getId() { return id; }

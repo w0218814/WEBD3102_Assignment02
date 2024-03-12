@@ -1,87 +1,88 @@
+<%@ page import="com.example.orderdatabase.model.User"%>
+<%@ page import="java.util.List"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.util.List"%> <!-- Importing List class -->
-<%@ page import="com.example.orderdatabase.model.User"%> <!-- Importing User class -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title><%= request.getAttribute("user") != null ? "Edit User" : "User Registration" %></title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"> <!-- Bootstrap CSS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> <!-- Bootstrap JS -->
+    <title>User Management</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </head>
 <body>
+<%@ include file="header.jsp" %>
 <div class="container">
     <h2 class="mt-5"><%= request.getAttribute("user") != null ? "Edit User" : "User Registration" %></h2>
 
-    <!-- Dropdown for selecting a user to edit -->
-    <div class="form-group">
-        <label for="userSelect">Select User to Edit:</label>
-        <select class="form-control" id="userSelect" name="userId">
-            <option value="">Choose...</option>
-            <% List<User> users = (List<User>) request.getAttribute("allUsers");
-                for (User user : users) {
-                    String selected = (request.getAttribute("user") != null && user.getId() == ((User) request.getAttribute("user")).getId()) ? "selected" : "";
-            %>
-            <option value="<%= user.getId() %>" <%= selected %>><%= user.getUsername() %></option>
-            <% } %>
-        </select>
-    </div>
-
-    <!-- Form for registering or editing a user -->
     <form action="<%= request.getContextPath() %>/admin/register" method="post">
-        <% User editingUser = (User) request.getAttribute("user");
-            String usernameValue = editingUser != null ? editingUser.getUsername() : "";
-            String fullNameValue = editingUser != null ? editingUser.getFullName() : "";
-            String emailValue = editingUser != null ? editingUser.getEmail() : "";
-            String roleNameValue = editingUser != null ? editingUser.getRoleName() : "";
+        <% User user = (User) request.getAttribute("user");
+            if (user != null) {
         %>
-        <% if (editingUser != null) { %>
-        <input type="hidden" name="id" value="<%= editingUser.getId() %>"/>
+        <input type="hidden" name="id" value="<%= user.getId() %>" />
         <% } %>
         <div class="form-group">
             <label for="username">Username:</label>
-            <input type="text" class="form-control" id="username" name="username" value="<%= usernameValue %>" required>
+            <input type="text" class="form-control" id="username" name="username" value="<%= user != null ? user.getUsername() : "" %>" required>
         </div>
-        <!-- Only show password field for new registrations -->
-        <% if (editingUser == null) { %>
+
+        <% if (user == null) { %>
         <div class="form-group">
             <label for="password">Password:</label>
             <input type="password" class="form-control" id="password" name="password" required>
         </div>
         <% } %>
+
         <div class="form-group">
             <label for="fullName">Full Name:</label>
-            <input type="text" class="form-control" id="fullName" name="fullName" value="<%= fullNameValue %>" required>
+            <input type="text" class="form-control" id="fullName" name="fullName" value="<%= user != null ? user.getFullName() : "" %>" required>
         </div>
+
         <div class="form-group">
             <label for="email">Email:</label>
-            <input type="email" class="form-control" id="email" name="email" value="<%= emailValue %>" required>
+            <input type="email" class="form-control" id="email" name="email" value="<%= user != null ? user.getEmail() : "" %>" required>
         </div>
+
         <div class="form-group">
-            <label for="roleName">Role:</label>
-            <select class="form-control" id="roleName" name="roleName">
-                <option value="admin" <%= "admin".equals(roleNameValue) ? "selected" : "" %>>Admin</option>
-                <option value="user" <%= "user".equals(roleNameValue) ? "selected" : "" %>>User</option>
+            <label for="street">Street:</label>
+            <input type="text" class="form-control" id="street" name="street" value="<%= user != null ? user.getStreet() : "" %>">
+        </div>
+
+        <div class="form-group">
+            <label for="city">City:</label>
+            <input type="text" class="form-control" id="city" name="city" value="<%= user != null ? user.getCity() : "" %>">
+        </div>
+
+        <div class="form-group">
+            <label for="nearbyLandmark">Nearby Landmark:</label>
+            <input type="text" class="form-control" id="nearbyLandmark" name="nearbyLandmark" value="<%= user != null ? user.getNearbyLandmark() : "" %>">
+        </div>
+
+        <div class="form-group">
+            <label for="province">Province:</label>
+            <input type="text" class="form-control" id="province" name="province" value="<%= user != null ? user.getProvince() : "" %>">
+        </div>
+
+        <div class="form-group">
+            <label for="postalCode">Postal Code:</label>
+            <input type="text" class="form-control" id="postalCode" name="postalCode" value="<%= user != null ? user.getPostalCode() : "" %>">
+        </div>
+
+        <div class="form-group">
+            <label for="phoneNumber">Phone Number:</label>
+            <input type="text" class="form-control" id="phoneNumber" name="phoneNumber" value="<%= user != null ? user.getPhoneNumber() : "" %>">
+        </div>
+
+        <div class="form-group">
+            <label for="role">Role:</label>
+            <select class="form-control" id="role" name="roleId">
+                <option value="1" <%= user != null && user.getRoleId() == 1 ? "selected" : "" %>>Admin</option>
+                <option value="2" <%= user == null || user.getRoleId() == 2 ? "selected" : "" %>>User</option>
             </select>
         </div>
-        <button onclick="goBack()" class="btn btn-secondary">Back</button>
-        <button type="submit" class="btn btn-primary"><%= editingUser != null ? "Update User" : "Register User" %></button>
+
+        <button type="submit" class="btn btn-primary"><%= user != null ? "Update User" : "Register User" %></button>
     </form>
 </div>
-
-<script>
-    // When the selected user changes, redirect with the selected user's ID as a query parameter
-    $('#userSelect').change(function() {
-        var userId = $(this).val();
-        if(userId) {
-            window.location.href = '<%= request.getContextPath() %>/admin/editUser?userId=' + userId;
-        }
-    });
-    // Function to go back to the previous page in the browser's history
-    function goBack() {
-        window.history.back();
-    }
-</script>
 </body>
 </html>
