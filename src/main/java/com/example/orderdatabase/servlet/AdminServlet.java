@@ -40,6 +40,7 @@ public class AdminServlet extends HttpServlet {
                 case "/adminConsole":
                     request.getRequestDispatcher("/WEB-INF/views/adminConsole.jsp").forward(request, response);
                     break;
+                // Additional GET actions as necessary
             }
         } catch (SQLException ex) {
             throw new ServletException("Database error occurred", ex);
@@ -60,7 +61,6 @@ public class AdminServlet extends HttpServlet {
             throw new ServletException("Database error occurred", ex);
         }
     }
-
     private void showUserList(HttpServletRequest request, HttpServletResponse response) throws SQLException, ServletException, IOException {
         List<User> listUser = userDAO.selectAllUsers();
         request.setAttribute("allUsers", listUser);
@@ -69,28 +69,58 @@ public class AdminServlet extends HttpServlet {
     }
 
     private void editUser(HttpServletRequest request, HttpServletResponse response) throws SQLException, ServletException, IOException {
-        long userId = Long.parseLong(request.getParameter("userId"));
-        User user = userDAO.selectUserById(userId);
-        request.setAttribute("user", user);
+        String userIdStr = request.getParameter("userId");
+        if (userIdStr != null && !userIdStr.isEmpty()) {
+            try {
+                long userId = Long.parseLong(userIdStr);
+                User user = userDAO.selectUserById(userId);
+                request.setAttribute("user", user);
+            } catch (NumberFormatException e) {
+                // Log error or redirect as necessary
+            }
+        }
         showUserList(request, response); // Assuming you're using the same JSP for listing and editing
     }
 
     private void insertOrUpdateUser(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
         String idStr = request.getParameter("id");
+        long id = 0;
+        boolean idProvided = false;
+        if (idStr != null && !idStr.isEmpty()) {
+            try {
+                id = Long.parseLong(idStr);
+                idProvided = true;
+            } catch (NumberFormatException e) {
+                // Log or handle the error as necessary. Consider sending back an error message or redirecting to an error page.
+            }
+        }
+
+        // Extract user details from the request.
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String fullName = request.getParameter("fullName");
         String email = request.getParameter("email");
+        // Extract additional fields.
         String street = request.getParameter("street");
         String city = request.getParameter("city");
         String nearbyLandmark = request.getParameter("nearbyLandmark");
         String province = request.getParameter("province");
         String postalCode = request.getParameter("postalCode");
         String phoneNumber = request.getParameter("phoneNumber");
-        int roleId = Integer.parseInt(request.getParameter("role"));
 
-        String hashedPassword = (password != null && !password.trim().isEmpty()) ? BCrypt.hashpw(password, BCrypt.gensalt()) : "";
+        // Default role if parsing fails.
+        int roleId = 2;
+        try {
+            roleId = Integer.parseInt(request.getParameter("roleId"));
+        } catch (NumberFormatException e) {
+            // Handle default or error case as necessary.
+        }
+
+        String hashedPassword = "";
+        if (password != null && !password.trim().isEmpty()) {
+            hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+        }
 
         User user = new User();
         user.setUsername(username);
@@ -102,23 +132,19 @@ public class AdminServlet extends HttpServlet {
         user.setProvince(province);
         user.setPostalCode(postalCode);
         user.setPhoneNumber(phoneNumber);
-        user.setRoleId(roleId); // Added: Ensure User model includes roleId
+        user.setRoleId(roleId);
 
-        if (idStr != null && !idStr.isEmpty()) {
-            long id = Long.parseLong(idStr);
+        if (idProvided) {
             user.setId(id);
+            userDAO.updateUser(user);
             if (!hashedPassword.isEmpty()) {
-                userDAO.updatePassword(id, hashedPassword); // Update password if provided
+                userDAO.updatePassword(id, hashedPassword);
             }
-            userDAO.updateUser(user); // Update existing user
         } else {
-            userDAO.insertUser(user, hashedPassword, roleId); // Insert new user
+            userDAO.insertUser(user, hashedPassword, roleId);
         }
 
-        // Added: Set success message in session
-        request.getSession().setAttribute("message", "User has been successfully " + (idStr != null ? "updated" : "added") + ".");
-
+        // After inserting or updating, redirect to the list of users.
         response.sendRedirect(request.getContextPath() + "/admin/listUsers");
     }
-    // Additional methods and logic as necessary...
 }

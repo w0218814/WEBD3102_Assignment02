@@ -13,7 +13,7 @@ public class UserDAO {
     private static final String SELECT_USER_BY_ID = "SELECT id, username, fullName, email, roleId, street, city, nearbyLandmark, province, postalCode, phoneNumber FROM users WHERE id = ?;";
     private static final String SELECT_ALL_USERS = "SELECT id, username, fullName, email, roleId, street, city, nearbyLandmark, province, postalCode, phoneNumber FROM users";
     private static final String DELETE_USERS_SQL = "DELETE FROM users WHERE id = ?;";
-    private static final String UPDATE_USERS_SQL = "UPDATE users SET username = ?, fullName = ?, email = ?, street = ?, city = ?, nearbyLandmark = ?, province = ?, postalCode = ?, phoneNumber = ? WHERE id = ?;";
+    private static final String UPDATE_USERS_SQL = "UPDATE users SET username = ?, fullName = ?, email = ?, street = ?, city = ?, nearbyLandmark = ?, province = ?, postalCode = ?, phoneNumber = ?, roleId = ? WHERE id = ?;";
     private static final String CHECK_LOGIN_SQL = "SELECT * FROM users WHERE username = ?;";
 
     public UserDAO() {}
@@ -105,7 +105,6 @@ public class UserDAO {
 
 
     // Select all users
-    // Select all users
     public List<User> selectAllUsers() throws SQLException {
         List<User> users = new ArrayList<>();
         try (Connection connection = MySQLConnection.getConnection();
@@ -149,22 +148,25 @@ public class UserDAO {
     public boolean updateUser(User user) throws SQLException {
         boolean rowUpdated;
         try (Connection connection = MySQLConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE_USERS_SQL)) {
+             // Notice the inclusion of roleId in the SQL statement.
+             PreparedStatement statement = connection.prepareStatement("UPDATE users SET username = ?, fullName = ?, email = ?, roleId = ?, street = ?, city = ?, nearbyLandmark = ?, province = ?, postalCode = ?, phoneNumber = ? WHERE id = ?;")) {
             statement.setString(1, user.getUsername());
             statement.setString(2, user.getFullName());
             statement.setString(3, user.getEmail());
-            statement.setString(4, user.getStreet());
-            statement.setString(5, user.getCity());
-            statement.setString(6, user.getNearbyLandmark());
-            statement.setString(7, user.getProvince());
-            statement.setString(8, user.getPostalCode());
-            statement.setString(9, user.getPhoneNumber());
-            statement.setLong(10, user.getId());
+            statement.setInt(4, user.getRoleId()); // Including the roleId in the update.
+            statement.setString(5, user.getStreet());
+            statement.setString(6, user.getCity());
+            statement.setString(7, user.getNearbyLandmark());
+            statement.setString(8, user.getProvince());
+            statement.setString(9, user.getPostalCode());
+            statement.setString(10, user.getPhoneNumber());
+            statement.setLong(11, user.getId()); // Make sure the id is the last parameter.
 
             rowUpdated = statement.executeUpdate() > 0;
         }
         return rowUpdated;
     }
+
 
     // Check user login
     public User checkLogin(String username, String password) throws SQLException {
