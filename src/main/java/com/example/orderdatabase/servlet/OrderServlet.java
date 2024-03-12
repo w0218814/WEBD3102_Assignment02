@@ -31,10 +31,6 @@ public class OrderServlet extends HttpServlet {
                 case "/list":
                     listOrders(request, response);
                     break;
-                case "/create":
-                    // Direct to the page to create a new order
-                    request.getRequestDispatcher("/WEB-INF/views/orderForm.jsp").forward(request, response);
-                    break;
                 case "/edit":
                     showEditForm(request, response);
                     break;
@@ -52,23 +48,14 @@ public class OrderServlet extends HttpServlet {
         String action = request.getPathInfo();
         try {
             switch (action) {
-                case "/insert":
-                    insertOrder(request, response);
-                    break;
                 case "/update":
                     updateOrder(request, response);
-                    break;
-                case "/insertWithItem":
-                    insertOrderWithItem(request, response);
-                    break;
-                case "/delete":
-                    deleteOrder(request, response);
                     break;
                 default:
                     response.sendError(HttpServletResponse.SC_NOT_FOUND);
                     break;
             }
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             throw new ServletException("SQL Error", ex);
         }
     }
@@ -76,58 +63,43 @@ public class OrderServlet extends HttpServlet {
     private void listOrders(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
         List<Order> listOrder = orderDAO.getAllOrders();
         request.setAttribute("listOrder", listOrder);
-        request.getRequestDispatcher("/WEB-INF/views/orderList.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/OrderList.jsp").forward(request, response);
     }
 
     private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, SQLException {
         long id = Long.parseLong(request.getParameter("id"));
         Order existingOrder = orderDAO.getOrderById(id);
         request.setAttribute("order", existingOrder);
-        request.getRequestDispatcher("/WEB-INF/views/orderForm.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/OrderForm.jsp").forward(request, response);
     }
 
-    private void insertOrder(HttpServletRequest request, HttpServletResponse response) throws IOException, SQLException {
-        long userId = Long.parseLong(request.getParameter("userId"));
-        BigDecimal totalAmount = new BigDecimal(request.getParameter("totalAmount"));
-        String status = request.getParameter("status");
-
-        orderDAO.addOrder(userId, totalAmount, status);
-        response.sendRedirect("list");
-    }
-
-    private void updateOrder(HttpServletRequest request, HttpServletResponse response) throws IOException, SQLException {
-        long orderId = Long.parseLong(request.getParameter("orderId"));
+    private void updateOrder(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        long orderId = -1;
         String status = request.getParameter("status");
         boolean isFulfilled = Boolean.parseBoolean(request.getParameter("isFulfilled"));
 
-        orderDAO.updateOrderStatus(orderId, status, isFulfilled);
-        response.sendRedirect("list");
-    }
+        try {
+            orderId = Long.parseLong(request.getParameter("orderId"));
+            boolean success = orderDAO.updateOrderStatus(orderId, status, isFulfilled);
 
-    private void deleteOrder(HttpServletRequest request, HttpServletResponse response) throws IOException, SQLException {
-        long orderId = Long.parseLong(request.getParameter("id"));
+            if (success) {
+                response.sendRedirect(request.getContextPath() + "/order/list");
+            } else {
+                // This branch might be unnecessary since you're not checking for failure but for exception handling
+                throw new SQLException("Failed to update the order with ID: " + orderId);
+            }
+        } catch (NumberFormatException | SQLException e) {
+            // Log the exception or handle it as per your application's requirement
+            request.setAttribute("errorMessage", "Error updating order: " + e.getMessage());
 
-        orderDAO.deleteOrder(orderId);
-        response.sendRedirect("list");
-    }
+            // When orderId is invalid or update fails, redirect to an error page or back to the form
+            // Consider providing feedback or logging the error as needed
+            if(orderId != -1) {
+                request.setAttribute("orderId", orderId);
+            }
 
-    private void insertOrderWithItem(HttpServletRequest request, HttpServletResponse response) throws IOException, SQLException {
-        // Retrieve user and product details from request
-        long userId = Long.parseLong(request.getParameter("userId"));
-        long productId = Long.parseLong(request.getParameter("productId"));
-        BigDecimal price = new BigDecimal(request.getParameter("price"));
-        int quantity = Integer.parseInt(request.getParameter("quantity")); // Assuming quantity is being sent
-
-        // Insert the order and order item using a new method in OrderDAO
-        long orderId = orderDAO.addOrderWithItems(userId, price, productId, quantity);
-
-        // Prepare response
-        if (orderId > 0) {
-            response.getWriter().write("Order placed successfully with Order ID: " + orderId);
-            response.setStatus(HttpServletResponse.SC_OK);
-        } else {
-            response.getWriter().write("Failed to place order.");
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            request.getRequestDispatcher("/WEB-INF/views/OrderForm.jsp").forward(request, response);
         }
     }
+
 }
