@@ -27,7 +27,9 @@ public class AdminServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getPathInfo();
         try {
-            if (action == null) action = "/listUsers"; // default action
+            if (action == null) {
+                action = "/listUsers"; // default action
+            }
             switch (action) {
                 case "/listUsers":
                     showUserList(request, response);
@@ -52,7 +54,7 @@ public class AdminServlet extends HttpServlet {
                 case "/register":
                     insertOrUpdateUser(request, response);
                     break;
-                // Add more cases if necessary for other POST actions
+                // Potential for more POST actions as necessary
             }
         } catch (SQLException ex) {
             throw new ServletException("Database error occurred", ex);
@@ -68,46 +70,55 @@ public class AdminServlet extends HttpServlet {
 
     private void editUser(HttpServletRequest request, HttpServletResponse response) throws SQLException, ServletException, IOException {
         long userId = Long.parseLong(request.getParameter("userId"));
-        User existingUser = userDAO.selectUserById(userId);
-        request.setAttribute("user", existingUser);
-        showUserList(request, response);
+        User user = userDAO.selectUserById(userId);
+        request.setAttribute("user", user);
+        showUserList(request, response); // Assuming you're using the same JSP for listing and editing
     }
 
     private void insertOrUpdateUser(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
-        String id = request.getParameter("id");
+        String idStr = request.getParameter("id");
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String fullName = request.getParameter("fullName");
         String email = request.getParameter("email");
-        // Retrieve role from the request, with a default value for regular users
-        int roleId = Integer.parseInt(request.getParameter("role") != null ? request.getParameter("role") : "2");
+        String street = request.getParameter("street");
+        String city = request.getParameter("city");
+        String nearbyLandmark = request.getParameter("nearbyLandmark");
+        String province = request.getParameter("province");
+        String postalCode = request.getParameter("postalCode");
+        String phoneNumber = request.getParameter("phoneNumber");
+        int roleId = Integer.parseInt(request.getParameter("role"));
 
-        String hashedPassword = (password != null && !password.trim().isEmpty()) ? BCrypt.hashpw(password, BCrypt.gensalt()) : null;
+        String hashedPassword = (password != null && !password.trim().isEmpty()) ? BCrypt.hashpw(password, BCrypt.gensalt()) : "";
 
-        User user;
-        if (id == null || id.isEmpty()) {
-            // New user registration
-            user = new User(username, fullName, email); // Initialize with other parameters as needed
-            if (hashedPassword != null) {
-                userDAO.insertUser(user, hashedPassword, roleId); // Pass roleId here
+        User user = new User();
+        user.setUsername(username);
+        user.setFullName(fullName);
+        user.setEmail(email);
+        user.setStreet(street);
+        user.setCity(city);
+        user.setNearbyLandmark(nearbyLandmark);
+        user.setProvince(province);
+        user.setPostalCode(postalCode);
+        user.setPhoneNumber(phoneNumber);
+        user.setRoleId(roleId); // Added: Ensure User model includes roleId
+
+        if (idStr != null && !idStr.isEmpty()) {
+            long id = Long.parseLong(idStr);
+            user.setId(id);
+            if (!hashedPassword.isEmpty()) {
+                userDAO.updatePassword(id, hashedPassword); // Update password if provided
             }
+            userDAO.updateUser(user); // Update existing user
         } else {
-            // Update existing user
-            user = userDAO.selectUserById(Long.parseLong(id));
-            user.setUsername(username);
-            user.setFullName(fullName);
-            user.setEmail(email);
-            // Set other fields on the user object as necessary
-
-            if (hashedPassword != null) {
-                userDAO.updatePassword(user.getId(), hashedPassword);
-            }
-            userDAO.updateUser(user);
+            userDAO.insertUser(user, hashedPassword, roleId); // Insert new user
         }
+
+        // Added: Set success message in session
+        request.getSession().setAttribute("message", "User has been successfully " + (idStr != null ? "updated" : "added") + ".");
+
         response.sendRedirect(request.getContextPath() + "/admin/listUsers");
     }
-
-
-    // ...
+    // Additional methods and logic as necessary...
 }
