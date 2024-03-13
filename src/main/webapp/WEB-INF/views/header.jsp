@@ -20,6 +20,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="<%= request.getContextPath() %>/">Home</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/reviews">Reviews</a>
+                </li>
                 <% if (loggedInUser != null && loggedInUser.getRoleId() == 1) { %>
                 <li class="nav-item">
                     <a class="nav-link" href="<%= request.getContextPath() %>/admin/listUsers">User Management</a>
