@@ -54,7 +54,7 @@
             <% if (session != null && session.getAttribute("user") != null) { %>
             var userId = <%= ((User) session.getAttribute("user")).getId() %>;
             $.ajax({
-                url: '<%=request.getContextPath()%>/order/insert',
+                url: '<%=request.getContextPath()%>/order/create',
                 type: 'POST',
                 data: {
                     userId: userId,
