@@ -11,44 +11,53 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 
+// Defines this class as a servlet handling requests with URL patterns matching "/user/*".
 @WebServlet(name = "UserServlet", urlPatterns = {"/user/*"})
 public class UserServlet extends HttpServlet {
-    private UserDAO userDAO;
+    private UserDAO userDAO; // DAO for user data interaction.
 
+    @Override
     public void init() {
+        // Initializes the UserDAO instance required for user-related operations.
         userDAO = new UserDAO();
     }
 
+    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // Handles HTTP POST requests, determining the specific action based on the URL path info.
         String action = request.getPathInfo();
         try {
             switch (action) {
                 case "/register":
+                    // Registers a new user.
                     registerUser(request, response);
                     break;
                 case "/login":
-                    // Code for handling user login will go here
+                    // Handles user login (code for login functionality will go here).
                     break;
-                // Additional POST actions can be handled here
+                // Additional POST actions can be handled here.
             }
         } catch (SQLException ex) {
             throw new ServletException("Database error: " + ex.getMessage(), ex);
         }
     }
 
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // Handles HTTP GET requests, determining the specific action based on the URL path info.
         String action = request.getPathInfo();
         try {
             switch (action) {
                 case "/register":
+                    // Displays the registration page.
                     showRegisterPage(request, response);
                     break;
                 case "/logout":
-                    // Code for handling user logout will go here
+                    // Handles user logout (code for logout functionality will go here).
                     break;
-                // Additional GET actions can be handled here
+                // Additional GET actions can be handled here.
             }
         } catch (Exception ex) {
             throw new ServletException("Error: " + ex.getMessage(), ex);
@@ -57,13 +66,13 @@ public class UserServlet extends HttpServlet {
 
     private void showRegisterPage(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Forward to the registration JSP page
+        // Forwards to the registration JSP page.
         request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
     }
 
     private void registerUser(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
-        // Extract form data
+        // Extracts form data for user registration.
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String fullName = request.getParameter("fullName");
@@ -75,10 +84,10 @@ public class UserServlet extends HttpServlet {
         String postalCode = request.getParameter("postalCode");
         String phoneNumber = request.getParameter("phoneNumber");
 
-        // Hash the password
+        // Hashes the password using BCrypt.
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
-        // Create a new user object and set all fields
+        // Creates a new User object and sets all fields.
         User newUser = new User();
         newUser.setUsername(username);
         newUser.setFullName(fullName);
@@ -90,13 +99,13 @@ public class UserServlet extends HttpServlet {
         newUser.setPostalCode(postalCode);
         newUser.setPhoneNumber(phoneNumber);
 
-        // The default role ID for regular users, change as per your role system
+        // Sets the default role ID for regular users (change as per your role system).
         int defaultRoleId = 2;
 
-        // Insert the new user into the database
+        // Inserts the new user into the database.
         userDAO.insertUser(newUser, hashedPassword, defaultRoleId);
 
-        // Redirect to login page or a confirmation page
-        response.sendRedirect(request.getContextPath() + "/user/login");
+        // Redirects to the login page or a confirmation page.
+        response.sendRedirect(request.getContextPath() + "/login");
     }
 }

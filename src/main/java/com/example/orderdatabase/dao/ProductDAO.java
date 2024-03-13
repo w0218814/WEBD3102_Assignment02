@@ -7,16 +7,21 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+// Manages database operations for product entities.
 public class ProductDAO {
+    // SQL statements for CRUD operations on products
     private static final String INSERT_PRODUCT_SQL = "INSERT INTO products (productName, productDescription, price) VALUES (?, ?, ?);";
     private static final String SELECT_PRODUCT_BY_ID = "SELECT productId, productName, productDescription, price FROM products WHERE productId = ?;";
     private static final String SELECT_ALL_PRODUCTS = "SELECT productId, productName, productDescription, price FROM products;";
     private static final String DELETE_PRODUCT_SQL = "DELETE FROM products WHERE productId = ?;";
     private static final String UPDATE_PRODUCT_SQL = "UPDATE products SET productName = ?, productDescription = ?, price = ? WHERE productId = ?;";
 
+    // Initializes a new instance of the ProductDAO class.
     public ProductDAO() {
+        // Constructor does not perform any actions.
     }
 
+    // Inserts a new product into the database and sets its generated ID.
     public void insertProduct(Product product) throws SQLException {
         try (Connection connection = MySQLConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PRODUCT_SQL, Statement.RETURN_GENERATED_KEYS)) {
@@ -39,6 +44,7 @@ public class ProductDAO {
         }
     }
 
+    // Retrieves a single product by its ID from the database.
     public Product selectProduct(long productId) throws SQLException {
         Product product = null;
         try (Connection connection = MySQLConnection.getConnection();
@@ -60,6 +66,7 @@ public class ProductDAO {
         return product;
     }
 
+    // Returns a list of all products in the database.
     public List<Product> selectAllProducts() throws SQLException {
         List<Product> products = new ArrayList<>();
         try (Connection connection = MySQLConnection.getConnection();
@@ -80,6 +87,7 @@ public class ProductDAO {
         return products;
     }
 
+    // Deletes a product from the database by its ID.
     public void deleteProduct(long productId) throws SQLException {
         try (Connection connection = MySQLConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(DELETE_PRODUCT_SQL)) {
@@ -91,6 +99,7 @@ public class ProductDAO {
         }
     }
 
+    // Updates the details of an existing product in the database.
     public void updateProduct(Product product) throws SQLException {
         try (Connection connection = MySQLConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(UPDATE_PRODUCT_SQL)) {
@@ -106,6 +115,7 @@ public class ProductDAO {
         }
     }
 
+    // Logs SQLException details to the standard error stream.
     private void printSQLException(SQLException ex) {
         for (Throwable e : ex) {
             if (e instanceof SQLException) {

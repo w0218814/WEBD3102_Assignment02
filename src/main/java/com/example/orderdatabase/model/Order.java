@@ -5,18 +5,25 @@ import java.util.Date;
 import java.util.List;
 
 public class Order {
+    // Unique identifier for the order
     private long orderId;
+    // Unique identifier for the user who placed the order
     private long userId;
+    // The date and time when the order was placed
     private Date orderDate;
+    // Total monetary value of the order
     private BigDecimal totalAmount;
+    // Current status of the order (e.g., "Shipped", "Processing")
     private String status;
+    // Flag indicating whether the order has been fulfilled
     private boolean isFulfilled;
-    private List<OrderItem> orderItems; // A list to hold order items
+    // Collection of items that are part of this order
+    private List<OrderItem> orderItems;
 
-    // Default constructor
+    // Constructs an Order object without initializing its fields
     public Order() {}
 
-    // Constructor without order items
+    // Constructs an Order object without including order items
     public Order(long orderId, long userId, Date orderDate, BigDecimal totalAmount, String status, boolean isFulfilled) {
         this.orderId = orderId;
         this.userId = userId;
@@ -26,13 +33,13 @@ public class Order {
         this.isFulfilled = isFulfilled;
     }
 
-    // Constructor including order items
+    // Constructs an Order object including order items
     public Order(long orderId, long userId, Date orderDate, BigDecimal totalAmount, String status, boolean isFulfilled, List<OrderItem> orderItems) {
-        this(orderId, userId, orderDate, totalAmount, status, isFulfilled);
+        this(orderId, userId, orderDate, totalAmount, status, isFulfilled); // Calls the constructor above
         this.orderItems = orderItems;
     }
 
-    // Getters and setters
+    // Standard getter and setter methods follow for each field
     public long getOrderId() {
         return orderId;
     }

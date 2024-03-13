@@ -19,7 +19,10 @@ public class UserDAO {
     public UserDAO() {}
 
     // Insert a new user
+    // Inserts a new user into the database with hashed password and specified role ID, then assigns a generated ID to the user.
 
+    // Connection and statement setup for inserting a new user.
+    // Hashed password and role ID are securely stored.
     public void insertUser(User user, String hashedPassword, int roleId) throws SQLException {
         try (Connection connection = MySQLConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_USERS_SQL, Statement.RETURN_GENERATED_KEYS)) {
@@ -50,7 +53,8 @@ public class UserDAO {
     }
 
 
-    // In your UserDAO class, add the following method:
+    // Updates the password for a user identified by userId. The new password is securely hashed before storage.
+    // Hashes the new password and updates it in the database for the specified user.
 
     public boolean updatePassword(long userId, String newPassword) throws SQLException {
         boolean passwordUpdated;
@@ -72,8 +76,8 @@ public class UserDAO {
     }
 
 
-    // Select a user by ID
-    // Select a user by ID
+    // Fetches a single user by their unique ID from the database.
+    // Retrieves user details for the specified ID.
     public User selectUserById(long id) throws SQLException {
         User user = null;
         try (Connection connection = MySQLConnection.getConnection();
@@ -104,7 +108,7 @@ public class UserDAO {
     }
 
 
-    // Select all users
+    // Retrieves a list of all users from the database.
     public List<User> selectAllUsers() throws SQLException {
         List<User> users = new ArrayList<>();
         try (Connection connection = MySQLConnection.getConnection();
@@ -133,7 +137,7 @@ public class UserDAO {
         return users;
     }
 
-        // Delete a user
+    // Deletes a user from the database based on the user's ID.
     public boolean deleteUser(long id) throws SQLException {
         boolean rowDeleted;
         try (Connection connection = MySQLConnection.getConnection();
@@ -144,7 +148,7 @@ public class UserDAO {
         return rowDeleted;
     }
 
-    // Update a user
+    // Updates information for an existing user in the database.
     public boolean updateUser(User user) throws SQLException {
         boolean rowUpdated;
         try (Connection connection = MySQLConnection.getConnection();
@@ -168,7 +172,7 @@ public class UserDAO {
     }
 
 
-    // Check user login
+    // Verifies user credentials against stored values for login purposes. Password verification uses BCrypt.
     public User checkLogin(String username, String password) throws SQLException {
         User user = null;
         try (Connection connection = MySQLConnection.getConnection();
@@ -199,7 +203,7 @@ public class UserDAO {
     }
 
 
-    // Print SQLException for troubleshooting
+    // Utility method to handle and log SQL exceptions.
     private void printSQLException(SQLException ex) {
         for (Throwable e : ex) {
             if (e instanceof SQLException) {
@@ -216,5 +220,4 @@ public class UserDAO {
         }
     }
 
-    // Add other UserDAO methods if needed...
 }
